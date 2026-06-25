@@ -1,0 +1,100 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: englishi_postgres
+    environment:
+      POSTGRES_USER: englishi
+      POSTGRES_PASSWORD: englishi_dev_password
+      POSTGRES_DB: englishi_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U englishi -d englishi_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: englishi_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile.dev
+    container_name: englishi_api
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://englishi:englishi_dev_password@postgres:5432/englishi_db
+      REDIS_URL: redis://redis:6379
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      AZURE_SPEECH_KEY: ${AZURE_SPEECH_KEY}
+      AZURE_SPEECH_REGION: ${AZURE_SPEECH_REGION}
+      JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_in_production}
+      PORT: 3001
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./apps/api/src:/app/src
+      - ./packages:/packages
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  ai-service:
+    build:
+      context: ./apps/ai-service
+      dockerfile: Dockerfile.dev
+    container_name: englishi_ai
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://englishi:englishi_dev_password@postgres:5432/englishi_db
+      REDIS_URL: redis://redis:6379
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      AZURE_SPEECH_KEY: ${AZURE_SPEECH_KEY}
+      AZURE_SPEECH_REGION: ${AZURE_SPEECH_REGION}
+      PORT: 3002
+    ports:
+      - "3002:3002"
+    volumes:
+      - ./apps/ai-service/src:/app/src
+      - ./packages:/packages
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  admin:
+    build:
+      context: ./apps/admin
+      dockerfile: Dockerfile.dev
+    container_name: englishi_admin
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:3001/v1
+      PORT: 3003
+    ports:
+      - "3003:3003"
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+  redis_data:
+

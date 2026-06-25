@@ -1,0 +1,32 @@
+{
+  "name": "@englishi/ai-service",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "dev:workers": "tsx watch src/workers.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "@englishi/shared-types": "workspace:*",
+    "@englishi/database": "workspace:*",
+    "@englishi/cefr-utils": "workspace:*",
+    "fastify": "^4.27.0",
+    "@fastify/jwt": "^8.0.0",
+    "@fastify/cors": "^9.0.0",
+    "openai": "^4.47.0",
+    "drizzle-orm": "^0.30.0",
+    "postgres": "^3.4.0",
+    "bullmq": "^5.4.0",
+    "ioredis": "^5.3.0",
+    "zod": "^3.22.0",
+    "dotenv": "^16.4.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0",
+    "@types/node": "^20.0.0"
+  }
+}
+

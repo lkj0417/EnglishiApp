@@ -1,0 +1,36 @@
+{
+  "name": "@englishi/api",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "@englishi/shared-types": "workspace:*",
+    "@englishi/database": "workspace:*",
+    "@englishi/cefr-utils": "workspace:*",
+    "fastify": "^4.27.0",
+    "@fastify/jwt": "^8.0.0",
+    "@fastify/cors": "^9.0.0",
+    "@fastify/rate-limit": "^9.1.0",
+    "@fastify/websocket": "^8.3.0",
+    "@fastify/multipart": "^8.3.0",
+    "drizzle-orm": "^0.30.0",
+    "postgres": "^3.4.0",
+    "bcryptjs": "^2.4.3",
+    "ioredis": "^5.3.0",
+    "bullmq": "^5.4.0",
+    "zod": "^3.22.0",
+    "dotenv": "^16.4.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^20.0.0"
+  }
+}
+
