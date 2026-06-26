@@ -3,5 +3,6 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
-CMD ["node", "--loader", "ts-node/esm", "src/workers.ts"]
+EXPOSE 3002
+CMD ["node", "--loader", "ts-node/esm", "src/server.ts"]
 

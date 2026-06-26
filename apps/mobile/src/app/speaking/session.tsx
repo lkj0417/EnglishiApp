@@ -43,19 +43,19 @@ export default function SpeakingSessionScreen() {
   });
 
   // 获取报告（完成后）
-  const { data: reportData, refetch: refetchReport } = useQuery({
+  const { data: reportData } = useQuery({
     queryKey: ['speaking-report', sessionId],
     queryFn: () => speakingAPI.getReport(sessionId!).then(r => r.data.data),
     enabled: sessionState === 'processing' && !!sessionId,
-    refetchInterval: (data) => {
-      if (data?.status === 'completed') return false;
+    refetchInterval: (query) => {
+      if (query.state.data?.feedbackReport) return false;
       return 3000;
     },
     refetchOnMount: false,
   });
 
   useEffect(() => {
-    if (reportData?.status === 'completed') {
+    if (reportData?.feedbackReport) {
       setSessionState('feedback');
     }
   }, [reportData]);

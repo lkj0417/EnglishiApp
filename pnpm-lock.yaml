@@ -4,9 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  ioredis: ^5.3.0
-
 importers:
 
   .:
@@ -275,6 +272,15 @@ importers:
 
   packages/database:
     dependencies:
+      '@englishi/cefr-utils':
+        specifier: workspace:*
+        version: link:../cefr-utils
+      '@types/bcryptjs':
+        specifier: ^2.4.6
+        version: 2.4.6
+      bcryptjs:
+        specifier: ^2.4.3
+        version: 2.4.3
       drizzle-kit:
         specifier: ^0.21.0
         version: 0.21.4

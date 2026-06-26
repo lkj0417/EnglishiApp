@@ -1,0 +1,15 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/(auth)/login/page": "app/(auth)/login/page.js",
+  "/page": "app/page.js",
+  "/(dashboard)/prompts/page": "app/(dashboard)/prompts/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/(dashboard)/providers/page": "app/(dashboard)/providers/page.js",
+  "/(dashboard)/page": "app/(dashboard)/page.js",
+  "/(dashboard)/settings/page": "app/(dashboard)/settings/page.js",
+  "/(dashboard)/users/page": "app/(dashboard)/users/page.js",
+  "/dashboard/prompts/page": "app/dashboard/prompts/page.js",
+  "/dashboard/settings/page": "app/dashboard/settings/page.js",
+  "/dashboard/providers/page": "app/dashboard/providers/page.js",
+  "/dashboard/users/page": "app/dashboard/users/page.js"
+}

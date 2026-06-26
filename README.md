@@ -1136,5 +1136,22 @@ docker compose exec redis redis-cli flushdb   # 清除 Redis 缓存（谨慎！�
 
 ---
 
-*文档版本：v1.0 | 更新日期：2026-06-26*  
+### 附录 D：v1.1 优化记录
+
+本次迭代修复了若干影响「自适应」核心闭环与部署一致性的问题：
+
+| 类别 | 优化内容 |
+|------|---------|
+| 🧠 自适应闭环 | **新增「静默能力模型更新引擎」**（`@englishi/database` 的 `updateAbilityAfterEvent`）。每完成一次阅读/听力/词汇/语法/写作/口语单元，按 PRD §1.3.1 公式 `new = old×0.85 + perf×target×0.15` 微调对应维度 CEFR，重算综合分与雅思预测分，并 **写入当日能力快照**。此前能力模型在测评后永不更新、进度曲线为平线的问题已解决。 |
+| 📈 学习事件 | 阅读/听力/语法事件回填 `ucl_before / ucl_after`；写作、口语 Worker 现也写入 `learning_events`（含 AI Band），周报与 Gate Review 单元计数更准确。 |
+| 🐳 部署一致性 | **修复 Docker 下 AI 服务缺失 Worker 的严重问题**：`ai-service` 容器原先只跑 `workers.ts`（仅 3 个 Worker、无 HTTP），导致语法/听力生成与 `/vocab/explain`、`/speaking/follow-up`、`/health` 在容器中失效。现统一由 `server.ts` 启动全部 5 个 Worker + HTTP，本地与容器行为一致，并加入优雅关闭与容器健康检查。 |
+| 🔐 安全 | 修复用户角色越权：普通 `admin` 不能再授予/修改 `super_admin`，并防止降级最后一个超级管理员。 |
+| ⚙️ 配置生效 | `maintenance_mode`（维护模式）与 `new_user_registration`（开放注册）开关现在真正在运行时生效（带 30s 缓存，管理员修改后即时失效）。 |
+| 🐛 其它 | 写作历史按提交时间倒序返回；移除冗余的 `dev:workers` 脚本与重复 Worker 定义。 |
+
+> 升级后请执行 `pnpm install`（已调整 workspace 依赖）。数据库结构未变更，无需重新迁移；能力快照将从升级后第一次学习开始累积。
+
+---
+
+*文档版本：v1.1 | 更新日期：2026-06-26*  
 *如遇问题，请提交 GitHub Issue 或联系维护团队。*

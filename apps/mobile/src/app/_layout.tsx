@@ -43,9 +43,12 @@ export default function RootLayout() {
         <Tabs.Screen name="(auth)/onboarding" options={{ href: null }} />
         <Tabs.Screen name="(auth)/assessment" options={{ href: null }} />
         <Tabs.Screen name="reading/[id]" options={{ href: null, title: '阅读' }} />
+        <Tabs.Screen name="listening/[id]" options={{ href: null, title: '听力' }} />
         <Tabs.Screen name="writing/[id]" options={{ href: null, title: '写作' }} />
         <Tabs.Screen name="speaking/session" options={{ href: null, title: '口语对练' }} />
         <Tabs.Screen name="vocabulary/review" options={{ href: null, title: '词汇复习' }} />
+        <Tabs.Screen name="grammar/practice" options={{ href: null, title: '语法专项' }} />
+        <Tabs.Screen name="assessment/gate-review" options={{ href: null, title: '关卡测验' }} />
       </Tabs>
     </QueryClientProvider>
   );

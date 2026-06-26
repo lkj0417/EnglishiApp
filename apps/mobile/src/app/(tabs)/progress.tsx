@@ -45,11 +45,11 @@ export default function ProgressScreen() {
       <Text style={s.sectionTitle}>各维度能力</Text>
       {data?.radarData?.map((dim: any) => (
         <View key={dim.skill} style={s.dimRow}>
-          <Text style={s.dimName}>{dim.skill}</Text>
+          <Text style={s.dimName}>{dim.label ?? SKILL_LABELS[dim.skill] ?? dim.skill}</Text>
           <View style={s.dimBarBg}>
             <View style={[
               s.dimBarFill,
-              { width: `${(dim.value / 6) * 100}%`, backgroundColor: SKILL_COLORS[dim.skill.toLowerCase()] ?? '#6366F1' },
+              { width: `${(dim.value / 6) * 100}%`, backgroundColor: SKILL_COLORS[dim.skill] ?? '#6366F1' },
             ]} />
           </View>
           <Text style={s.dimValue}>{formatCefr(dim.value)}</Text>

@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { getDb, abilityModelSnapshots, learningEvents, userAbilityModels, writingTasks, speakingSessions, vocabularyItems } from '@englishi/database';
+import { getDb, abilityModelSnapshots, learningEvents, userAbilityModels, writingTasks, speakingSessions, vocabularyItems, users } from '@englishi/database';
 import { eq, and, gte, desc, sql } from 'drizzle-orm';
 import { cefrToIeltsPrediction, estimateWeeksToGoal, calcCefrGapToIeltsTarget, formatCefrForDisplay } from '@englishi/cefr-utils';
 
@@ -30,14 +30,14 @@ export async function progressRoutes(app: FastifyInstance) {
       .where(and(eq(learningEvents.userId, userId), gte(learningEvents.createdAt, thirtyDaysAgo)))
       .groupBy(learningEvents.skill);
 
-    // 能力雷达图数据
+    // 能力雷达图数据（使用英文 skill key，前端自行翻译）
     const radarData = [
-      { skill: '词汇', value: parseFloat(ability.vocabularyCefr ?? '3'), max: 6 },
-      { skill: '语法', value: parseFloat(ability.grammarCefr ?? '3'), max: 6 },
-      { skill: '阅读', value: parseFloat(ability.readingCefr ?? '3'), max: 6 },
-      { skill: '听力', value: parseFloat(ability.listeningCefr ?? '3'), max: 6 },
-      { skill: '口语', value: parseFloat(ability.speakingCefr ?? '3'), max: 6 },
-      { skill: '写作', value: parseFloat(ability.writingCefr ?? '3'), max: 6 },
+      { skill: 'vocabulary', label: '词汇', value: parseFloat(ability.vocabularyCefr ?? '3'), max: 6 },
+      { skill: 'grammar',    label: '语法', value: parseFloat(ability.grammarCefr ?? '3'), max: 6 },
+      { skill: 'reading',    label: '阅读', value: parseFloat(ability.readingCefr ?? '3'), max: 6 },
+      { skill: 'listening',  label: '听力', value: parseFloat(ability.listeningCefr ?? '3'), max: 6 },
+      { skill: 'speaking',   label: '口语', value: parseFloat(ability.speakingCefr ?? '3'), max: 6 },
+      { skill: 'writing',    label: '写作', value: parseFloat(ability.writingCefr ?? '3'), max: 6 },
     ];
 
     // 词汇掌握统计
@@ -140,10 +140,15 @@ export async function progressRoutes(app: FastifyInstance) {
 
     const overallCefr = parseFloat(ability.overallCefr ?? '3');
 
-    // 模拟目标（实际应从 users 表读取）
-    const targetBand = 7.0;
+    // 从用户资料读取目标和每日时长（不使用硬编码）
+    const [userProfile] = await db.select({
+      iletsTargetBand: users.iletsTargetBand,
+      dailyMinutesGoal: users.dailyMinutesGoal,
+    }).from(users).where(eq(users.id, userId)).limit(1);
+
+    const targetBand = parseFloat(userProfile?.iletsTargetBand ?? '7.0');
     const cefrGap = calcCefrGapToIeltsTarget(overallCefr, targetBand);
-    const weeksNeeded = estimateWeeksToGoal(cefrGap, 45); // 假设每日 45 分钟
+    const weeksNeeded = estimateWeeksToGoal(cefrGap, userProfile?.dailyMinutesGoal ?? 45);
 
     // 生成里程碑
     const milestones = [];

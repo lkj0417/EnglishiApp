@@ -31,7 +31,6 @@ export default function WritingTaskScreen() {
   const [essayText, setEssayText] = useState('');
   const [submissionId, setSubmissionId] = useState<string | null>(null);
   const [pollingEnabled, setPollingEnabled] = useState(false);
-  const [expandedAnnotation, setExpandedAnnotation] = useState<string | null>(null);
 
   // 获取写作题目
   const { data: taskData, isLoading: taskLoading } = useQuery({
@@ -58,8 +57,9 @@ export default function WritingTaskScreen() {
     queryKey: ['writing-critique', submissionId],
     queryFn: () => writingAPI.getCritique(submissionId!).then(r => r.data.data),
     enabled: pollingEnabled && !!submissionId,
-    refetchInterval: (data) => {
-      if (data?.state?.status === 'completed') return false;
+    refetchInterval: (query) => {
+      // 直接检查 status 字段（非 state.status）
+      if (query.state.data?.status === 'completed') return false;
       return 3000; // 每 3 秒轮询一次
     },
   });
@@ -152,6 +152,7 @@ export default function WritingTaskScreen() {
 // ── 批改报告组件 ──────────────────────────────
 function CritiqueReport({ report, onBack }: { report: WritingCritiqueReport; onBack: () => void }) {
   const [activeTab, setActiveTab] = useState<'scores' | 'annotations' | 'rewrite'>('scores');
+  const [expandedAnnotation, setExpandedAnnotation] = useState<string | null>(null);
 
   const overall = report.overall;
   const bandColor = overall.overall >= 7 ? '#10B981' : overall.overall >= 6 ? '#F59E0B' : '#EF4444';

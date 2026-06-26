@@ -1,32 +1,50 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  ActivityIndicator, TextInput, KeyboardAvoidingView, Platform,
+  ActivityIndicator, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { readingAPI, vocabularyAPI } from '../../lib/api';
-import type { ReadingArticle, ReadingQuestion } from '@englishi/shared-types';
+import type { ReadingArticle } from '@englishi/shared-types';
 
 export default function ReadingScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
-  const [results, setResults] = useState<Record<number, boolean>>({});
+  const [results, setResults] = useState<Record<string, boolean>>({});
   const [selectedWord, setSelectedWord] = useState<any | null>(null);
+  const [jobId, setJobId] = useState<string | null>(null);
+  const isNew = id === 'new';
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['reading', id],
-    queryFn: () => readingAPI.getContent(id!).then(r => r.data.data as ReadingArticle),
-    enabled: !!id,
+  const generateMutation = useMutation({
+    mutationFn: () => readingAPI.generate(),
+    onSuccess: (res) => setJobId(res.data.data.jobId),
   });
 
+  useEffect(() => {
+    if (isNew && !jobId && !generateMutation.isPending) {
+      generateMutation.mutate();
+    }
+  }, [isNew, jobId, generateMutation]);
+
+  const contentLookupId = isNew ? jobId : id;
+
+  const { data, isLoading } = useQuery<any>({
+    queryKey: ['reading', contentLookupId],
+    queryFn: () => readingAPI.getContent(contentLookupId!).then(r => r.data.data),
+    enabled: !!contentLookupId,
+    refetchInterval: (query) => query.state.data?.body ? false : 2500,
+  });
+
+  const article = data?.body ? (data as ReadingArticle) : null;
+
   const submitMutation = useMutation({
-    mutationFn: () => readingAPI.submitAnswers(id!, answers),
+    mutationFn: () => readingAPI.submitAnswers(article!.id, answers),
     onSuccess: (res) => {
-      const correct: Record<number, boolean> = {};
-      data?.questions.forEach(q => {
-        correct[q.id] = answers[q.id] === q.correctAnswer;
+      const correct: Record<string, boolean> = {};
+      article?.questions.forEach(q => {
+        correct[String(q.id)] = answers[String(q.id)] === q.correctAnswer;
       });
       setResults(correct);
       setSubmitted(true);
@@ -35,10 +53,10 @@ export default function ReadingScreen() {
 
   const addVocabMutation = useMutation({
     mutationFn: (word: { word: string; wordCefr: number }) =>
-      vocabularyAPI.addWord({ ...word, domain: data?.topic }),
+      vocabularyAPI.addWord({ ...word, domain: article?.topic }),
   });
 
-  if (isLoading || !data) {
+  if (isLoading || !article) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color="#6366F1" />
@@ -47,7 +65,6 @@ export default function ReadingScreen() {
     );
   }
 
-  const article = data;
 
   // 渲染文章正文（高亮 i+1 词汇）
   const renderArticleBody = () => {
@@ -85,7 +102,7 @@ export default function ReadingScreen() {
     );
   };
 
-  const allAnswered = article.questions.every(q => answers[q.id]);
+  const allAnswered = article.questions.every(q => answers[String(q.id)]);
   const correctCount = Object.values(results).filter(Boolean).length;
 
   return (
@@ -147,12 +164,12 @@ export default function ReadingScreen() {
         {/* 理解题 */}
         <Text style={styles.sectionTitle}>理解测验</Text>
         {article.questions.map((q, qi) => (
-          <View key={q.id} style={[styles.questionCard, submitted && results[q.id] && styles.questionCorrect, submitted && !results[q.id] && styles.questionWrong]}>
+          <View key={q.id} style={[styles.questionCard, submitted && results[String(q.id)] && styles.questionCorrect, submitted && !results[String(q.id)] && styles.questionWrong]}>
             <Text style={styles.questionNumber}>第 {qi + 1} 题 <Text style={styles.questionType}>({q.type})</Text></Text>
             <Text style={styles.questionText}>{q.question}</Text>
             {q.options.map(opt => {
               const letter = opt.split(':')[0]?.trim() ?? '';
-              const isSelected = answers[q.id] === letter;
+              const isSelected = answers[String(q.id)] === letter;
               const isCorrect = q.correctAnswer === letter;
               return (
                 <TouchableOpacity
@@ -163,7 +180,7 @@ export default function ReadingScreen() {
                     submitted && isCorrect && styles.optionCorrect,
                     submitted && isSelected && !isCorrect && styles.optionWrongSelected,
                   ]}
-                  onPress={() => !submitted && setAnswers(prev => ({ ...prev, [q.id]: letter }))}
+                  onPress={() => !submitted && setAnswers(prev => ({ ...prev, [String(q.id)]: letter }))}
                   disabled={submitted}
                 >
                   <Text style={[

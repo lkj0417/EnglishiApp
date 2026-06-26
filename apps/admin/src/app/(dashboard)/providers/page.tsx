@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { providerApi } from '../../../../lib/api';
+import { providerApi } from '../../../lib/api';
 
 const PROVIDERS = [
   { id: 'openai',       label: 'OpenAI',        defaultUrl: 'https://api.openai.com/v1',              models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'] },
@@ -22,7 +22,7 @@ const TIER_OPTIONS = [
 const EMPTY_FORM = {
   name: '', provider: 'openai', baseUrl: '', apiKey: '',
   modelId: 'gpt-4o', tier: 'high', isActive: true, isDefault: false,
-  priority: 1, maxTokens: '', temperature: '0.7', requestsPerMin: '', notes: '',
+  priority: '1', maxTokens: '', temperature: '0.7', requestsPerMin: '', notes: '',
 };
 
 export default function ProvidersPage() {
@@ -54,8 +54,8 @@ export default function ProvidersPage() {
 
   const testMutation = useMutation({
     mutationFn: providerApi.test,
-    onSuccess: (result, id) => setTestResults(prev => ({ ...prev, [id]: result.data })),
-    onError: (err: any, id) => setTestResults(prev => ({ ...prev, [id]: { status: 'failed', error: err.message } })),
+    onSuccess: (result: any, id: string) => setTestResults(prev => ({ ...prev, [id]: result.data })),
+    onError: (err: any, id: string) => setTestResults(prev => ({ ...prev, [id]: { status: 'failed', error: err.message } })),
   });
 
   const handleProviderChange = (providerId: string) => {
@@ -91,7 +91,7 @@ export default function ProvidersPage() {
       apiKey: '', // 不回显
       modelId: p.modelId, tier: p.tier,
       isActive: p.isActive, isDefault: p.isDefault,
-      priority: p.priority ?? 1,
+      priority: String(p.priority ?? 1),
       maxTokens: p.maxTokens ?? '', temperature: p.temperature ?? '0.7',
       requestsPerMin: p.requestsPerMin ?? '', notes: p.notes ?? '',
     });

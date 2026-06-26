@@ -1,5 +1,6 @@
 import 'dotenv/config';
-import { getDb, appSettings, users } from '@englishi/database';
+import { getDb } from './index.js';
+import { appSettings, users } from './schema/index.js';
 import { sql } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 

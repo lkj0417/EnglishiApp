@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { promptApi } from '../../../../lib/api';
+import { promptApi } from '../../../lib/api';
 
 const ENGINES = ['ReadingEngine', 'ListeningEngine', 'SpeakingExaminer', 'WritingCritic', 'VocabEngine', 'GrammarEngine'];
 
@@ -11,16 +11,16 @@ export default function PromptsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ engineName: 'ReadingEngine', version: '', tier: 'fast', systemPrompt: '', userPromptTemplate: '', notes: '' });
 
-  const { data: templates = [] } = useQuery({ queryKey: ['admin-prompts'], queryFn: promptApi.list });
-  const { data: detail } = useQuery({ queryKey: ['admin-prompt', selectedId], queryFn: () => promptApi.get(selectedId!), enabled: !!selectedId });
+  const { data: templates = [] } = useQuery<any[]>({ queryKey: ['admin-prompts'], queryFn: promptApi.list });
+  const { data: detail } = useQuery<any>({ queryKey: ['admin-prompt', selectedId], queryFn: () => promptApi.get(selectedId!), enabled: !!selectedId });
 
   const createMutation = useMutation({
-    mutationFn: promptApi.create,
+    mutationFn: (data: typeof form) => promptApi.create(data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin-prompts'] }); setShowCreate(false); },
   });
 
   const activateMutation = useMutation({
-    mutationFn: promptApi.activate,
+    mutationFn: (id: string) => promptApi.activate(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-prompts'] }),
   });
 

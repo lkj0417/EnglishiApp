@@ -2,7 +2,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { getDb, users, aiProviders, appSettings, promptTemplates, apiUsageLogs } from '@englishi/database';
 import { eq, desc, and, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import bcrypt from 'bcryptjs';
+import { invalidateSettingCache } from '../../shared/settings.js';
 
 // ─────────────────────────────────────────────
 // 管理员鉴权中间件
@@ -59,6 +59,11 @@ const ProviderSchema = z.object({
   temperature: z.number().min(0).max(2).optional(),
   requestsPerMin: z.number().int().positive().optional(),
   notes: z.string().optional(),
+});
+
+const ProviderPatchSchema = ProviderSchema.partial().extend({
+  // 编辑时允许前端传空字符串表示“不修改 API Key”
+  apiKey: z.string().optional(),
 });
 
 const SettingUpdateSchema = z.object({
@@ -196,7 +201,7 @@ export async function adminRoutes(app: FastifyInstance) {
   // PATCH /v1/admin/providers/:id
   app.patch('/providers/:id', async (req, reply) => {
     const { id } = req.params as { id: string };
-    const body = ProviderSchema.partial().safeParse(req.body);
+    const body = ProviderPatchSchema.safeParse(req.body);
     if (!body.success) {
       return reply.code(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: body.error.message } });
     }
@@ -216,7 +221,7 @@ export async function adminRoutes(app: FastifyInstance) {
     if (body.data.notes !== undefined)        updates['notes'] = body.data.notes;
 
     // 更新 API Key（如有）
-    if (body.data.apiKey) {
+    if (body.data.apiKey && body.data.apiKey.trim().length > 0) {
       updates['apiKey'] = encryptApiKey(body.data.apiKey);
       updates['apiKeyHint'] = `...${body.data.apiKey.slice(-4)}`;
     }
@@ -326,6 +331,7 @@ export async function adminRoutes(app: FastifyInstance) {
       return reply.code(404).send({ success: false, error: { code: 'NOT_FOUND', message: 'Setting not found' } });
     }
 
+    invalidateSettingCache(key);
     return reply.send({ success: true, data: { message: 'Setting updated' } });
   });
 
@@ -340,6 +346,7 @@ export async function adminRoutes(app: FastifyInstance) {
         .set({ value: u.value, updatedBy: adminId, updatedAt: new Date() })
         .where(eq(appSettings.key, u.key));
     }
+    invalidateSettingCache();
     return reply.send({ success: true, data: { message: `${updates.length} settings updated` } });
   });
 
@@ -434,7 +441,8 @@ export async function adminRoutes(app: FastifyInstance) {
       .offset((Number(page) - 1) * Number(limit))
       .orderBy(desc(users.createdAt));
 
-    const [total] = await db.select({ count: sql<number>`count(*)` }).from(users);
+    const [total] = await db.select({ count: sql<number>`count(*)` }).from(users)
+      .where(conditions.length > 0 ? and(...conditions) : undefined);
 
     return reply.send({ success: true, data: userList, meta: { total: Number(total?.count ?? 0), page: Number(page), limit: Number(limit) } });
   });
@@ -443,12 +451,37 @@ export async function adminRoutes(app: FastifyInstance) {
   app.patch('/users/:id/role', async (req, reply) => {
     const { id } = req.params as { id: string };
     const { role } = req.body as { role: string };
+    const actor = req.user as { userId: string; role: string };
 
     if (!['student', 'admin', 'super_admin'].includes(role)) {
       return reply.code(400).send({ success: false, error: { code: 'INVALID_ROLE', message: 'Invalid role' } });
     }
 
     const db = getDb();
+
+    // 仅 super_admin 可授予 super_admin（防止普通 admin 越权提升）
+    if (role === 'super_admin' && actor.role !== 'super_admin') {
+      return reply.code(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Only super admins can grant super admin role' } });
+    }
+
+    const [target] = await db.select({ id: users.id, role: users.role }).from(users).where(eq(users.id, id)).limit(1);
+    if (!target) {
+      return reply.code(404).send({ success: false, error: { code: 'NOT_FOUND', message: 'User not found' } });
+    }
+
+    // 普通 admin 不能修改 super_admin 用户的角色
+    if (target.role === 'super_admin' && actor.role !== 'super_admin') {
+      return reply.code(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Cannot modify a super admin' } });
+    }
+
+    // 禁止把最后一个 super_admin 降级，避免系统失去超管
+    if (target.role === 'super_admin' && role !== 'super_admin') {
+      const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(users).where(eq(users.role, 'super_admin'));
+      if (Number(count) <= 1) {
+        return reply.code(400).send({ success: false, error: { code: 'LAST_SUPER_ADMIN', message: 'Cannot demote the last super admin' } });
+      }
+    }
+
     await db.update(users).set({ role }).where(eq(users.id, id));
     return reply.send({ success: true, data: { message: 'Role updated' } });
   });
@@ -470,7 +503,7 @@ export async function adminRoutes(app: FastifyInstance) {
       avgLatency: sql<number>`avg(${apiUsageLogs.latencyMs})`,
       errors: sql<number>`count(*) filter (where ${apiUsageLogs.success} = false)`,
     }).from(apiUsageLogs)
-      .where(sql`${apiUsageLogs.createdAt} >= now() - interval '${sql.raw(String(Number(days)))} days'`)
+      .where(sql`${apiUsageLogs.createdAt} >= now() - (${Number(days)} * interval '1 day')`)
       .groupBy(sql`date(${apiUsageLogs.createdAt})`, apiUsageLogs.taskType)
       .orderBy(sql`date(${apiUsageLogs.createdAt}) desc`);
 

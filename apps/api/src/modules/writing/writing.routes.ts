@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { getDb, writingTasks, userAbilityModels } from '@englishi/database';
-import { eq } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import { Queue } from 'bullmq';
 import Redis from 'ioredis';
 
@@ -130,7 +130,7 @@ export async function writingRoutes(app: FastifyInstance) {
       status: writingTasks.status,
       submittedAt: writingTasks.submittedAt,
     }).from(writingTasks).where(eq(writingTasks.userId, userId))
-      .orderBy(writingTasks.submittedAt)
+      .orderBy(desc(writingTasks.submittedAt))
       .limit(20);
 
     return reply.send({ success: true, data: tasks });

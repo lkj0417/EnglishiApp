@@ -4,7 +4,6 @@
   "private": true,
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "dev:workers": "tsx watch src/workers.ts",
     "build": "tsc",
     "start": "node dist/server.js"
   },

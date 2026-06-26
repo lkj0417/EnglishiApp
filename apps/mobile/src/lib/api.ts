@@ -88,6 +88,22 @@ export const readingAPI = {
     apiClient.post(`/reading/sessions/${articleId}/answers`, { answers }),
 };
 
+export const listeningAPI = {
+  generate: (params?: { topic?: string; subSkill?: string }) =>
+    apiClient.post('/listening/generate', params),
+  getContent: (jobId: string) => apiClient.get(`/listening/content/${jobId}`),
+  getAudio: (audioId: string) => apiClient.get(`/listening/audio/${audioId}`),
+  submitAnswers: (audioId: string, answers: Record<string, string>, timeSpentSec?: number) =>
+    apiClient.post(`/listening/sessions/${audioId}/answers`, { answers, timeSpentSec }),
+};
+
+export const grammarAPI = {
+  getPriorityPoint: () => apiClient.get('/grammar/priority-point'),
+  getLesson: (point: string) => apiClient.get(`/grammar/${point}/lesson`),
+  submitExercises: (point: string, results: Array<{ questionId: string; correct: boolean }>) =>
+    apiClient.post(`/grammar/${point}/exercises/submit`, { results }),
+};
+
 export const speakingAPI = {
   createSession: (sessionType: 'Part1' | 'Part2' | 'Part3') =>
     apiClient.post('/speaking/sessions', { sessionType }),

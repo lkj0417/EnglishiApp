@@ -5,6 +5,7 @@ import fastifyCors from '@fastify/cors';
 import fastifyRateLimit from '@fastify/rate-limit';
 import fastifyWebsocket from '@fastify/websocket';
 import { getDb } from '@englishi/database';
+import { getSettingBool } from './shared/settings.js';
 
 // 路由模块
 import { authRoutes } from './modules/user/auth.routes.js';
@@ -47,6 +48,19 @@ async function buildServer() {
   });
 
   await app.register(fastifyWebsocket);
+
+  // ── 维护模式拦截 ──────────────────────────
+  // 维护期间放行健康检查、登录与管理后台（便于管理员关闭维护），其余学习接口返回 503
+  app.addHook('onRequest', async (request, reply) => {
+    const url = request.raw.url ?? '';
+    if (url === '/health' || url.startsWith('/v1/auth') || url.startsWith('/v1/admin')) return;
+    if (await getSettingBool('maintenance_mode', false)) {
+      return reply.code(503).send({
+        success: false,
+        error: { code: 'MAINTENANCE', message: '系统维护中，请稍后再试' },
+      });
+    }
+  });
 
   // ── 认证钩子 ──────────────────────────────
   app.decorate('authenticate', async (request: any, reply: any) => {

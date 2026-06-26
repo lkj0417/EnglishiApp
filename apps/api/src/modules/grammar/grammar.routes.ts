@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { getDb, grammarItems, userAbilityModels } from '@englishi/database';
+import { getDb, grammarItems, userAbilityModels, generatedContent, learningEvents, updateAbilityAfterEvent } from '@englishi/database';
 import { eq, and } from 'drizzle-orm';
+import { computePerformanceScore } from '@englishi/cefr-utils';
 import { Queue } from 'bullmq';
 import Redis from 'ioredis';
 
@@ -89,10 +90,45 @@ export async function grammarRoutes(app: FastifyInstance) {
       return reply.code(404).send({ success: false, error: { code: 'UNKNOWN_GRAMMAR', message: 'Grammar point not found' } });
     }
 
-    // 将语法讲解生成请求加入队列（异步，结果存入缓存）
+    const db = getDb();
+
+    const [cached] = await db.select().from(generatedContent)
+      .where(and(eq(generatedContent.contentType, 'grammar_lesson'), eq(generatedContent.grammarPoint, point)))
+      .limit(1);
+
+    if (cached) {
+      return reply.send({
+        success: true,
+        data: {
+          grammarPoint: point,
+          title: grammarInfo.title,
+          cefrLevel: grammarInfo.cefr,
+          status: 'completed',
+          lesson: cached.contentJson,
+        },
+      });
+    }
+
+    // 将语法讲解生成请求加入队列（使用 jobId 去重，相同语法点不重复生成）
     const queue = getGrammarQueue();
     const jobId = `grammar-${point}-lesson`;
-    await queue.add('generate-lesson', { grammarPoint: point, userId }, { jobId, deduplication: { id: jobId } });
+    const existingJob = await queue.getJob(jobId);
+    if (existingJob && await existingJob.getState() === 'completed') {
+      return reply.send({
+        success: true,
+        data: {
+          grammarPoint: point,
+          title: grammarInfo.title,
+          cefrLevel: grammarInfo.cefr,
+          status: 'completed',
+          lesson: existingJob.returnvalue,
+        },
+      });
+    }
+
+    if (!existingJob) {
+      await queue.add('generate-lesson', { grammarPoint: point, userId }, { jobId });
+    }
 
     return reply.send({
       success: true,
@@ -114,6 +150,9 @@ export async function grammarRoutes(app: FastifyInstance) {
 
     const db = getDb();
     const totalQuestions = results.length;
+    if (totalQuestions === 0) {
+      return reply.code(400).send({ success: false, error: { code: 'NO_RESULTS', message: 'No exercise results submitted' } });
+    }
     const correctCount = results.filter(r => r.correct).length;
     const accuracy = correctCount / totalQuestions;
 
@@ -149,6 +188,31 @@ export async function grammarRoutes(app: FastifyInstance) {
         lastPracticedAt: new Date(),
       }).where(and(eq(grammarItems.userId, userId), eq(grammarItems.grammarPoint, point)));
     }
+
+    // 记录学习事件 + 静默更新语法维度能力模型（PRD §1.3.1）
+    const abilityUpdate = await updateAbilityAfterEvent(db, {
+      userId,
+      skill: 'grammar',
+      performanceScore: computePerformanceScore({ correctRate: accuracy }),
+      contentCefr: grammarInfo?.cefr ?? 0,
+    }).catch(() => null);
+
+    await db.insert(learningEvents).values({
+      userId,
+      sessionId: crypto.randomUUID(),
+      skill: 'grammar',
+      taskType: 'grammar_exercise',
+      contentCefr: (grammarInfo?.cefr ?? 3.0).toString(),
+      performanceScore: accuracy.toString(),
+      correctCount,
+      totalCount: totalQuestions,
+      timeSpentSec: 0,
+      hintUsedCount: 0,
+      skipped: false,
+      errorsMade: accuracy < 0.5 ? [{ type: `grammar_${point}_error`, content: `accuracy ${(accuracy * 100).toFixed(0)}%` }] : [],
+      uclBefore: abilityUpdate?.before?.toString(),
+      uclAfter: abilityUpdate?.after?.toString(),
+    }).catch(() => {});
 
     return reply.send({
       success: true,

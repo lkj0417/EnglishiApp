@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { getDb, users } from '@englishi/database';
 import { eq } from 'drizzle-orm';
+import { getSettingBool } from '../../shared/settings.js';
 
 const RegisterSchema = z.object({
   email: z.string().email(),
@@ -24,12 +25,19 @@ export async function authRoutes(app: FastifyInstance) {
     const db = getDb();
     const { email, password, displayName, adminSecret } = body.data;
 
+    const ADMIN_SECRET = process.env['ADMIN_SECRET'] ?? 'change-this-admin-secret';
+    const isAdminSignup = !!adminSecret && adminSecret === ADMIN_SECRET;
+
+    // 若后台关闭了注册开关，则仅允许带正确 ADMIN_SECRET 的管理员注册
+    if (!isAdminSignup && !(await getSettingBool('new_user_registration', true))) {
+      return reply.code(403).send({ success: false, error: { code: 'REGISTRATION_CLOSED', message: '当前暂未开放新用户注册' } });
+    }
+
     const existing = await db.select().from(users).where(eq(users.email, email.toLowerCase())).limit(1);
     if (existing.length > 0) return reply.code(409).send({ success: false, error: { code: 'EMAIL_EXISTS', message: 'Email already registered' } });
 
     const passwordHash = await bcrypt.hash(password, 12);
-    const ADMIN_SECRET = process.env['ADMIN_SECRET'] ?? 'change-this-admin-secret';
-    const role = adminSecret === ADMIN_SECRET ? 'admin' : 'student';
+    const role = isAdminSignup ? 'admin' : 'student';
 
     const [newUser] = await db.insert(users).values({ email: email.toLowerCase(), passwordHash, displayName, role })
       .returning({ id: users.id, email: users.email, displayName: users.displayName, role: users.role });

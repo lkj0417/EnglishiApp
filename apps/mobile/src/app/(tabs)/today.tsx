@@ -55,10 +55,10 @@ export default function TodayScreen() {
         router.push('/vocabulary/review');
         break;
       case 'reading_article':
-        router.push(`/reading/${task.contentId ?? task.id}`);
+        router.push(`/reading/${task.contentId ?? 'new'}`);
         break;
       case 'listening_audio':
-        router.push(`/listening/${task.contentId ?? task.id}`);
+        router.push(`/listening/${task.contentId ?? 'new'}`);
         break;
       case 'speaking_session':
         router.push('/speaking/session');

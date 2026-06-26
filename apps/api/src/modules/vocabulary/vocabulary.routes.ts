@@ -1,8 +1,8 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { getDb, vocabularyItems } from '@englishi/database';
+import { getDb, vocabularyItems, learningEvents, updateAbilityAfterEvent } from '@englishi/database';
 import { eq, and, lte, ne } from 'drizzle-orm';
-import { sm2Update } from '@englishi/cefr-utils';
+import { sm2Update, computePerformanceScore } from '@englishi/cefr-utils';
 import { sql } from 'drizzle-orm';
 
 const ReviewResultSchema = z.object({
@@ -100,6 +100,31 @@ export async function vocabularyRoutes(app: FastifyInstance) {
       lastReviewedAt: new Date(),
       masteredAt: newStatus === 'mastered' ? new Date() : item.masteredAt,
     }).where(eq(vocabularyItems.id, wordId));
+
+    // 记录学习事件
+    await db.insert(learningEvents).values({
+      userId,
+      sessionId: crypto.randomUUID(),
+      skill: 'vocabulary',
+      taskType: 'vocab_review',
+      taskId: wordId,
+      contentCefr: item.wordCefr,
+      performanceScore: (quality / 5).toString(),
+      correctCount: quality >= 3 ? 1 : 0,
+      totalCount: 1,
+      timeSpentSec: 0,
+      hintUsedCount: 0,
+      skipped: false,
+      errorsMade: quality < 3 ? [{ type: 'recall_failure', content: item.word }] : [],
+    });
+
+    // 静默更新词汇维度能力模型（按回忆质量加权）
+    await updateAbilityAfterEvent(db, {
+      userId,
+      skill: 'vocabulary',
+      performanceScore: computePerformanceScore({ correctRate: quality / 5 }),
+      contentCefr: parseFloat(item.wordCefr ?? '0'),
+    }).catch(() => null);
 
     return reply.send({
       success: true,

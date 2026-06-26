@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { settingsApi } from '../../../../lib/api';
+import { settingsApi } from '../../../lib/api';
 
 const CATEGORY_LABELS: Record<string, { label: string; icon: string }> = {
   ai:         { label: 'AI 模型配置', icon: '🤖' },

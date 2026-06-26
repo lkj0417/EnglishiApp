@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { getDb, users, userAbilityModels } from '@englishi/database';
-import { eq } from 'drizzle-orm';
+import { getDb, users, userAbilityModels, abilityModelSnapshots } from '@englishi/database';
+import { eq, desc } from 'drizzle-orm';
 
 const UpdateProfileSchema = z.object({
   displayName: z.string().min(2).max(100).optional(),
@@ -84,6 +84,19 @@ export async function userRoutes(app: FastifyInstance) {
     }
 
     return reply.send({ success: true, data: model });
+  });
+
+  // GET /v1/users/me/ability/history — 获取能力历史快照（折线图数据）
+  app.get('/me/ability/history', async (req: FastifyRequest, reply: FastifyReply) => {
+    const userId = (req.user as any).userId;
+    const db = getDb();
+
+    const snapshots = await db.select().from(abilityModelSnapshots)
+      .where(eq(abilityModelSnapshots.userId, userId))
+      .orderBy(desc(abilityModelSnapshots.snapshotDate))
+      .limit(90); // 最近 90 天
+
+    return reply.send({ success: true, data: snapshots.reverse() }); // 按时间正序返回
   });
 }
 

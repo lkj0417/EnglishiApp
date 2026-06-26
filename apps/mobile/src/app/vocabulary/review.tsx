@@ -91,7 +91,7 @@ export default function VocabReviewScreen() {
         {/* 词汇卡片正面 */}
         <View style={s.wordCard}>
           <View style={s.wordHeader}>
-            <Text style={s.wordCefr}>CEFR {formatCefr(parseFloat(word.wordCefr))}</Text>
+            <Text style={s.wordCefr}>CEFR {formatCefr(Number(word.wordCefr))}</Text>
             <Text style={s.wordStatus}>{STATUS_LABELS[word.status] ?? word.status}</Text>
           </View>
           <Text style={s.wordMain}>{word.word}</Text>

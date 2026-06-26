@@ -1,8 +1,8 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { getDb, assessmentSessions, userAbilityModels, users } from '@englishi/database';
+import { getDb, assessmentSessions, userAbilityModels, users, abilityModelSnapshots } from '@englishi/database';
 import { eq } from 'drizzle-orm';
-import { estimateAbility, cefrToIeltsPrediction, calcCefrGapToIeltsTarget, estimateWeeksToGoal } from '@englishi/cefr-utils';
+import { estimateAbility, cefrToIeltsPrediction } from '@englishi/cefr-utils';
 
 // CAT 题库（正式版应从数据库加载，此处内嵌基础题库）
 import { QUESTION_BANK } from './question-bank.js';
@@ -188,6 +188,21 @@ export async function assessmentRoutes(app: FastifyInstance) {
     // 标记引导流程完成
     await db.update(users).set({ onboardingCompleted: true }).where(eq(users.id, userId));
 
+    // 创建初始能力快照（为进度曲线提供起点）
+    const today = new Date().toISOString().split('T')[0]!;
+    await db.insert(abilityModelSnapshots).values({
+      userId,
+      snapshotDate: today,
+      overallCefr: result.overallCefr.toString(),
+      vocabularyCefr: result.dimensions.vocabulary.toString(),
+      grammarCefr: result.dimensions.grammar.toString(),
+      readingCefr: result.dimensions.reading.toString(),
+      listeningCefr: result.dimensions.listening.toString(),
+      speakingCefr: result.dimensions.speaking.toString(),
+      writingCefr: result.dimensions.writing.toString(),
+      ieltsPrediction: result.ieltsPrediction.toString(),
+    }).onConflictDoNothing(); // 若当天已有快照则跳过
+
     return reply.send({ success: true, data: { message: 'Assessment saved', abilityModel: result } });
   });
 }
@@ -245,7 +260,7 @@ function isConverged(answers: any[]): boolean {
   return range <= 0.5; // 难度范围在 0.5 内认为收敛
 }
 
-function buildAbilityResult(answers: any[], overallCefr: number, userId: string) {
+function buildAbilityResult(answers: any[], overallCefr: number, _userId: string) {
   // 按技能分组计算各维度能力值
   const bySkill: Record<string, any[]> = {};
   for (const a of answers) {

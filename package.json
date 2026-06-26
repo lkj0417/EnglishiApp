@@ -9,7 +9,8 @@
   ],
   "scripts": {
     "dev": "turbo run dev --parallel",
-    "build": "turbo run build",
+    "build": "pnpm --filter @englishi/api build && pnpm --filter @englishi/ai-service build && pnpm --filter @englishi/admin build && pnpm --filter @englishi/mobile typecheck",
+    "typecheck": "pnpm --filter @englishi/api exec tsc --noEmit && pnpm --filter @englishi/ai-service exec tsc --noEmit && pnpm --filter @englishi/admin exec tsc --noEmit && pnpm --filter @englishi/mobile typecheck && pnpm --filter @englishi/database exec tsc --noEmit",
     "lint": "turbo run lint",
     "test": "turbo run test",
     "db:generate": "turbo run db:generate",
@@ -21,11 +22,6 @@
     "turbo": "^2.0.0",
     "typescript": "^5.4.0",
     "@types/node": "^20.0.0"
-  },
-  "pnpm": {
-    "overrides": {
-      "ioredis": "^5.3.0"
-    }
   }
 }
 

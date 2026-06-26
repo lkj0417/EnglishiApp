@@ -1,6 +1,17 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { getDb, speakingSessions, userAbilityModels } from '@englishi/database';
+import { getDb, speakingSessions } from '@englishi/database';
 import { eq } from 'drizzle-orm';
+import { Queue } from 'bullmq';
+import Redis from 'ioredis';
+
+let speakingReportQueue: Queue | null = null;
+function getSpeakingReportQueue() {
+  if (!speakingReportQueue) {
+    const redis = new Redis(process.env['REDIS_URL'] ?? 'redis://localhost:6379', { maxRetriesPerRequest: null });
+    speakingReportQueue = new Queue('speaking-report', { connection: redis as any });
+  }
+  return speakingReportQueue;
+}
 
 export async function speakingRoutes(app: FastifyInstance) {
   app.addHook('preHandler', (app as any).authenticate);
@@ -67,8 +78,7 @@ export async function speakingRoutes(app: FastifyInstance) {
   // WebSocket: 口语实时流
   app.get('/sessions/:id/stream', { websocket: true }, (socket: any, req) => {
     const { id: sessionId } = req.params as { id: string };
-    let audioChunks: Buffer[] = [];
-    let transcript: Array<{ speaker: string; text: string; tsStart: number; tsEnd: number }> = [];
+    const transcript: Array<{ speaker: string; text: string; tsStart: number; tsEnd: number }> = [];
 
     // fastify-websocket wraps the raw ws socket
     const ws = socket.socket ?? socket;
@@ -98,13 +108,12 @@ export async function speakingRoutes(app: FastifyInstance) {
           }
 
           case 'audio_chunk': {
-            const chunk = Buffer.from(msg.data, 'base64');
-            audioChunks.push(chunk);
+            // Audio chunks received — in production, accumulate and send to ASR service
+            // For now just acknowledge receipt
             break;
           }
 
           case 'candidate_recording_end': {
-            audioChunks = [];
 
             send({
               type: 'transcription_stream',
@@ -138,11 +147,32 @@ export async function speakingRoutes(app: FastifyInstance) {
               });
 
               const db = getDb();
+              // 更新会话状态
               await db.update(speakingSessions).set({
                 transcript,
                 status: 'processing',
                 audioDurationSec: Math.round(msg.total_duration_sec ?? 120),
               }).where(eq(speakingSessions.id, sessionId));
+
+              // 获取用户 ID 并触发报告生成 Worker
+              const [session] = await db.select({ userId: speakingSessions.userId, sessionType: speakingSessions.sessionType })
+                .from(speakingSessions).where(eq(speakingSessions.id, sessionId)).limit(1);
+
+              if (session) {
+                const queue = getSpeakingReportQueue();
+                await queue.add('generate-report', {
+                  sessionId,
+                  userId: session.userId,
+                  transcript,
+                  acousticData: {
+                    fillerWordCount: msg.filler_word_count ?? 0,
+                    fillerWordsFound: msg.filler_words ?? [],
+                    avgSpeechRateWpm: msg.avg_speech_rate_wpm ?? 130,
+                    pauseFrequencyPerMinute: msg.pause_frequency ?? 2,
+                  },
+                  sessionType: session.sessionType,
+                }, { attempts: 3, backoff: { type: 'exponential', delay: 2000 } });
+              }
 
               ws.close();
             }

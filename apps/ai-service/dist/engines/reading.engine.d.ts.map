@@ -1,0 +1,1 @@
+{"version":3,"file":"reading.engine.d.ts","sourceRoot":"","sources":["../../src/engines/reading.engine.ts"],"names":[],"mappings":"AACA,OAAO,KAAK,EAAE,mBAAmB,EAAE,cAAc,EAAE,MAAM,wBAAwB,CAAC;AAGlF,UAAU,qBAAqB;IAC7B,GAAG,EAAE,mBAAmB,CAAC;IACzB,cAAc,EAAE,MAAM,CAAC;IACvB,KAAK,CAAC,EAAE,MAAM,CAAC;CAChB;AAED,wBAAsB,sBAAsB,CAAC,MAAM,EAAE,qBAAqB,GAAG,OAAO,CAAC,cAAc,CAAC,CA8GnG"}

@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
-import { getDb, aiProviders, apiUsageLogs, appSettings } from '@englishi/database';
-import { eq, and } from 'drizzle-orm';
+import { getDb, aiProviders, apiUsageLogs } from '@englishi/database';
+import { eq, and, sql } from 'drizzle-orm';
 import { createDecipheriv } from 'crypto';
 
 // ─────────────────────────────────────────────
@@ -37,15 +37,26 @@ const DEFAULT_BASE_URLS: Record<string, string> = {
 async function getProviderConfig(tier: 'high' | 'fast') {
   try {
     const db = getDb();
-    const [provider] = await db.select()
+    let [provider] = await db.select()
       .from(aiProviders)
       .where(and(eq(aiProviders.tier, tier), eq(aiProviders.isActive, true), eq(aiProviders.isDefault, true)))
       .limit(1);
 
+    // 若管理员尚未设置默认模型，使用该 tier 下优先级最高的活跃 provider
+    if (!provider) {
+      [provider] = await db.select()
+        .from(aiProviders)
+        .where(and(eq(aiProviders.tier, tier), eq(aiProviders.isActive, true)))
+        .orderBy(aiProviders.priority)
+        .limit(1);
+    }
+
     if (provider) {
+      const apiKey = decryptApiKey(provider.apiKey);
+      if (!apiKey) throw new Error(`Provider ${provider.name} API key cannot be decrypted`);
       return {
         id: provider.id,
-        apiKey: decryptApiKey(provider.apiKey),
+        apiKey,
         baseURL: provider.baseUrl ?? DEFAULT_BASE_URLS[provider.provider] ?? 'https://api.openai.com/v1',
         modelId: provider.modelId,
         maxTokens: provider.maxTokens ?? undefined,
@@ -178,10 +189,12 @@ async function logUsage(data: {
       errorCode: data.errorCode,
     });
 
-    // 同步更新提供商累计统计
+    // 同步更新提供商累计统计（SQL 原子递增）
     if (data.providerId && data.success) {
       await db.update(aiProviders).set({
-        totalRequests: aiProviders.totalRequests,  // drizzle 暂用原始 SQL 递增
+        totalRequests:  sql`${aiProviders.totalRequests} + 1`,
+        totalTokensIn:  sql`${aiProviders.totalTokensIn} + ${data.tokensIn}`,
+        totalTokensOut: sql`${aiProviders.totalTokensOut} + ${data.tokensOut}`,
         lastUsedAt: new Date(),
       }).where(eq(aiProviders.id, data.providerId));
     }

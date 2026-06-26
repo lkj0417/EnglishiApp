@@ -1,6 +1,6 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
-import { dashboardApi } from '../../../lib/api';
+import { dashboardApi } from '../../lib/api';
 
 export default function DashboardPage() {
   const { data: overview } = useQuery({ queryKey: ['admin-overview'], queryFn: dashboardApi.overview });

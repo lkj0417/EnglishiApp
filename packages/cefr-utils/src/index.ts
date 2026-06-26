@@ -204,3 +204,68 @@ export function estimateWeeksToGoal(
   return Math.round(totalCefrSteps * baseWeeksPerHalfCefr * dailyMinutesFactor);
 }
 
+const clamp01 = (n: number): number => Math.max(0, Math.min(1, n));
+
+/**
+ * 计算单个学习单元的「表现分」performance_score（0-1）
+ * 对应 PRD Phase2 §1.3.1 静默能力模型更新公式：
+ *   performance_score = correct_rate × 0.6
+ *                     + (1 - avg_response_time / time_limit) × 0.2
+ *                     + (1 - hint_count / total_items) × 0.2
+ * 当缺少计时 / 提示数据时，对应分量按满分计（不做惩罚）。
+ */
+export function computePerformanceScore(params: {
+  correctRate: number;            // 0-1
+  avgResponseTimeSec?: number;    // 平均答题时长（秒）
+  timeLimitSec?: number;          // 单题时间上限（秒）
+  hintCount?: number;             // 提示使用次数
+  totalItems?: number;            // 题目总数
+}): number {
+  const { correctRate, avgResponseTimeSec, timeLimitSec, hintCount, totalItems } = params;
+
+  const accuracyComponent = clamp01(correctRate) * 0.6;
+
+  let timeComponent = 0.2; // 无计时数据 → 不惩罚
+  if (timeLimitSec && timeLimitSec > 0 && avgResponseTimeSec != null) {
+    timeComponent = clamp01(1 - avgResponseTimeSec / timeLimitSec) * 0.2;
+  }
+
+  let hintComponent = 0.2; // 无提示数据 → 不惩罚
+  if (hintCount != null && totalItems && totalItems > 0) {
+    hintComponent = clamp01(1 - hintCount / totalItems) * 0.2;
+  }
+
+  return clamp01(accuracyComponent + timeComponent + hintComponent);
+}
+
+/**
+ * 能力值指数滑动平均（EMA）更新：
+ *   new_ability = old_ability × 0.85 + performance_score × target_level × 0.15
+ * 0.85 的旧值权重用于抑制单次波动；结果限制在 A1(1.0)–C2(6.0)。
+ */
+export function nextAbilityEstimate(
+  oldCefr: number,
+  performanceScore: number,
+  targetCefr: number,
+): number {
+  const updated = oldCefr * 0.85 + clamp01(performanceScore) * targetCefr * 0.15;
+  return Math.max(1.0, Math.min(6.0, parseFloat(updated.toFixed(2))));
+}
+
+/** 雅思分 → CEFR 数值（cefrToIeltsPrediction 的逆映射，用于口语/写作 Band 回写能力模型）*/
+export function ieltsBandToCefr(band: number): number {
+  const mapping: Array<[number, number]> = [
+    [1.0, 1.0], [3.0, 2.0], [4.5, 3.0], [6.0, 4.0], [7.5, 5.0], [9.0, 6.0],
+  ];
+  if (band <= mapping[0]![0]) return 1.0;
+  for (let i = 0; i < mapping.length - 1; i++) {
+    const [b1, c1] = mapping[i]!;
+    const [b2, c2] = mapping[i + 1]!;
+    if (band >= b1 && band <= b2) {
+      const t = (band - b1) / (b2 - b1);
+      return Math.max(1.0, Math.min(6.0, parseFloat((c1 + t * (c2 - c1)).toFixed(2))));
+    }
+  }
+  return 6.0;
+}
+

@@ -4,6 +4,7 @@ import * as schema from './schema/index.js';
 
 export * from './schema/index.js';
 export { schema };
+export * from './ability-updater.js';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 

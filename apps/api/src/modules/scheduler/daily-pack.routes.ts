@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { getDb, dailyPacks, userAbilityModels } from '@englishi/database';
-import { eq, and } from 'drizzle-orm';
+import { getDb, dailyPacks, userAbilityModels, appSettings, learningEvents } from '@englishi/database';
+import { eq, and, sql } from 'drizzle-orm';
 import { calcTargetWordCount, calcTargetSpeechRate } from '@englishi/cefr-utils';
 
 export async function dailyPackRoutes(app: FastifyInstance) {
@@ -32,6 +32,27 @@ export async function dailyPackRoutes(app: FastifyInstance) {
     const overallCefr = parseFloat(ability.overallCefr ?? '3.0');
     const vocabCeiling = Math.min(6.0, overallCefr + 1.0);
 
+    // 从 app_settings 读取口语间隔天数配置
+    const [speakingDaySetting] = await db.select({ value: appSettings.value })
+      .from(appSettings).where(and(eq(appSettings.category, 'learning'), eq(appSettings.key, 'speaking_day_interval'))).limit(1);
+    const speakingDayInterval = parseInt(speakingDaySetting?.value ?? '2', 10);
+
+    // 从 app_settings 读取 Gate Review 触发间隔
+    const [gateReviewSetting] = await db.select({ value: appSettings.value })
+      .from(appSettings).where(and(eq(appSettings.category, 'learning'), eq(appSettings.key, 'gate_review_trigger_units'))).limit(1);
+    const gateReviewTriggerUnits = parseInt(gateReviewSetting?.value ?? '10', 10);
+
+    // 计算今天是否是口语训练日（基于间隔天数）
+    const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
+    const isSpeakingDay = dayOfYear % speakingDayInterval === 0;
+
+    // 检查是否需要 Gate Review（统计总学习事件数，每 N 个触发一次）
+    const totalCompletedUnits = await db.select({ count: sql<number>`count(*)` })
+      .from(learningEvents)
+      .where(eq(learningEvents.userId, userId));
+    const completedCount = Number(totalCompletedUnits[0]?.count ?? 0);
+    const gateReviewDue = completedCount > 0 && completedCount % gateReviewTriggerUnits === 0;
+
     const difficultyParams = {
       vocabCeiling,
       grammarAllowed: ability.masteredGrammar as string[],
@@ -41,16 +62,17 @@ export async function dailyPackRoutes(app: FastifyInstance) {
       speechRateWpm: calcTargetSpeechRate(overallCefr),
     };
 
-    // 构建任务列表（每日学习包）
-    const today_is_speaking_day = new Date().getDay() % 2 === 0; // 偶数日口语，奇数日写作
+    // 构建任务列表
     const tasks = [
       { id: crypto.randomUUID(), type: 'vocab_review', status: 'pending', estimatedMinutes: 8 },
       { id: crypto.randomUUID(), type: 'grammar_exercise', status: 'pending', estimatedMinutes: 5 },
       { id: crypto.randomUUID(), type: 'reading_article', status: 'pending', estimatedMinutes: 12 },
       { id: crypto.randomUUID(), type: 'listening_audio', status: 'pending', estimatedMinutes: 10 },
-      today_is_speaking_day
+      isSpeakingDay
         ? { id: crypto.randomUUID(), type: 'speaking_session', status: 'pending', estimatedMinutes: 10 }
         : { id: crypto.randomUUID(), type: 'writing_task', status: 'pending', estimatedMinutes: 15 },
+      // Gate Review 作为独立任务追加（触发时）
+      ...(gateReviewDue ? [{ id: crypto.randomUUID(), type: 'gate_review', status: 'pending', estimatedMinutes: 5 }] : []),
     ];
 
     const [newPack] = await db.insert(dailyPacks).values({
@@ -61,7 +83,7 @@ export async function dailyPackRoutes(app: FastifyInstance) {
       completedTasks: 0,
       totalMinutesEstimated: tasks.reduce((s, t) => s + t.estimatedMinutes, 0),
       difficultyParams,
-      gateReviewDue: false, // 每10个单元触发，此处简化
+      gateReviewDue,
     }).returning();
 
     return reply.send({ success: true, data: newPack });
@@ -117,6 +139,7 @@ export async function dailyPackRoutes(app: FastifyInstance) {
 
   // POST /v1/daily-pack/gate-review/submit
   app.post('/gate-review/submit', async (req: FastifyRequest, reply: FastifyReply) => {
+    const userId = (req.user as any).userId;
     const { answers } = req.body as { answers: Record<string, string> };
     // 简化评分逻辑
     const correct = { gr_01: 'B', gr_02: 'B' };
@@ -125,6 +148,13 @@ export async function dailyPackRoutes(app: FastifyInstance) {
       if ((correct as any)[qId] === ans) score++;
     }
     const passed = score / Object.keys(correct).length >= 0.7;
+    const db = getDb();
+    const today = new Date().toISOString().split('T')[0]!;
+    await db.update(dailyPacks).set({
+      gateReviewPassed: passed,
+      gateReviewScore: (score / Object.keys(correct).length).toString(),
+    }).where(and(eq(dailyPacks.userId, userId), eq(dailyPacks.packDate, today)));
+
     return reply.send({ success: true, data: { passed, score: score / Object.keys(correct).length, message: passed ? '通过！继续下一阶段' : '未通过，系统将安排针对性复习' } });
   });
 }

@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { usersApi } from '../../../../lib/api';
+import { usersApi } from '../../../lib/api';
 
 const ROLE_LABELS: Record<string, { label: string; color: string }> = {
   student:     { label: '学员', color: 'bg-gray-100 text-gray-600' },
