@@ -4,52 +4,9 @@
     <option name="selectedModelId" value="claude-opus-4.8" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="832451fb-b97b-4164-898b-fc964e86d8df" name="更改" comment="add initial project files and configurations">
+    <list default="true" id="832451fb-b97b-4164-898b-fc964e86d8df" name="更改" comment="add initial files and update imports for dashboard pages">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/admin/next.config.js" beforeDir="false" afterPath="$PROJECT_DIR$/apps/admin/next.config.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/admin/src/app/(auth)/login/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/apps/admin/src/app/(auth)/login/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/admin/src/app/(dashboard)/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/apps/admin/src/app/(dashboard)/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/admin/src/app/(dashboard)/prompts/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/apps/admin/src/app/(dashboard)/prompts/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/admin/src/app/(dashboard)/providers/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/apps/admin/src/app/(dashboard)/providers/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/admin/src/app/(dashboard)/settings/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/apps/admin/src/app/(dashboard)/settings/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/admin/src/app/(dashboard)/users/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/apps/admin/src/app/(dashboard)/users/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/admin/tsconfig.json" beforeDir="false" afterPath="$PROJECT_DIR$/apps/admin/tsconfig.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/ai-service/Dockerfile.dev" beforeDir="false" afterPath="$PROJECT_DIR$/apps/ai-service/Dockerfile.dev" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/ai-service/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/apps/ai-service/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/ai-service/src/lib/openai-client.ts" beforeDir="false" afterPath="$PROJECT_DIR$/apps/ai-service/src/lib/openai-client.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/ai-service/src/server.ts" beforeDir="false" afterPath="$PROJECT_DIR$/apps/ai-service/src/server.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/ai-service/src/workers.ts" beforeDir="false" afterPath="$PROJECT_DIR$/apps/ai-service/src/workers.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/api/src/modules/admin/admin.routes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/apps/api/src/modules/admin/admin.routes.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/api/src/modules/assessment/assessment.routes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/apps/api/src/modules/assessment/assessment.routes.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/api/src/modules/grammar/grammar.routes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/apps/api/src/modules/grammar/grammar.routes.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/api/src/modules/listening/listening.routes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/apps/api/src/modules/listening/listening.routes.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/api/src/modules/progress/progress.routes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/apps/api/src/modules/progress/progress.routes.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/api/src/modules/reading/reading.routes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/apps/api/src/modules/reading/reading.routes.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/api/src/modules/scheduler/daily-pack.routes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/apps/api/src/modules/scheduler/daily-pack.routes.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/api/src/modules/speaking/speaking.routes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/apps/api/src/modules/speaking/speaking.routes.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/api/src/modules/user/auth.routes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/apps/api/src/modules/user/auth.routes.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/api/src/modules/user/user.routes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/apps/api/src/modules/user/user.routes.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/api/src/modules/vocabulary/vocabulary.routes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/apps/api/src/modules/vocabulary/vocabulary.routes.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/api/src/modules/writing/writing.routes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/apps/api/src/modules/writing/writing.routes.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/api/src/server.ts" beforeDir="false" afterPath="$PROJECT_DIR$/apps/api/src/server.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/mobile/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/apps/mobile/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/mobile/src/app/(tabs)/progress.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/apps/mobile/src/app/(tabs)/progress.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/mobile/src/app/(tabs)/today.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/apps/mobile/src/app/(tabs)/today.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/mobile/src/app/_layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/apps/mobile/src/app/_layout.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/mobile/src/app/reading/[id].tsx" beforeDir="false" afterPath="$PROJECT_DIR$/apps/mobile/src/app/reading/[id].tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/mobile/src/app/speaking/session.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/apps/mobile/src/app/speaking/session.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/mobile/src/app/vocabulary/review.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/apps/mobile/src/app/vocabulary/review.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/mobile/src/app/writing/[id].tsx" beforeDir="false" afterPath="$PROJECT_DIR$/apps/mobile/src/app/writing/[id].tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/mobile/src/lib/api.ts" beforeDir="false" afterPath="$PROJECT_DIR$/apps/mobile/src/lib/api.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/cefr-utils/src/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/cefr-utils/src/index.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/database/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/packages/database/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/database/src/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/database/src/index.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/database/src/seed.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/database/src/seed.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pnpm-lock.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pnpm-lock.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pnpm-workspace.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pnpm-workspace.yaml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -165,8 +122,17 @@
       <updated>1782413042215</updated>
       <workItem from="1782413044801" duration="8432000" />
       <workItem from="1782424676229" duration="186000" />
-      <workItem from="1782466171695" duration="6330000" />
+      <workItem from="1782466171695" duration="7478000" />
     </task>
+    <task id="LOCAL-00001" summary="add initial files and update imports for dashboard pages">
+      <option name="closed" value="true" />
+      <created>1782478342016</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1782478342016</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -182,5 +148,9 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="add initial files and update imports for dashboard pages" />
+    <option name="LAST_COMMIT_MESSAGE" value="add initial files and update imports for dashboard pages" />
   </component>
 </project>

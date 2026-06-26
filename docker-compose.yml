@@ -43,6 +43,7 @@ services:
       AZURE_SPEECH_KEY: ${AZURE_SPEECH_KEY}
       AZURE_SPEECH_REGION: ${AZURE_SPEECH_REGION}
       JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_in_production}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-default-32-byte-key-change-this!!}
       PORT: 3001
     ports:
       - "3001:3001"
@@ -67,6 +68,7 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       AZURE_SPEECH_KEY: ${AZURE_SPEECH_KEY}
       AZURE_SPEECH_REGION: ${AZURE_SPEECH_REGION}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-default-32-byte-key-change-this!!}
       PORT: 3002
     ports:
       - "3002:3002"
