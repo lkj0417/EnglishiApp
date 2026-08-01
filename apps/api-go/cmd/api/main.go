@@ -1,18 +1,3 @@
-	speakingRepo := repository.NewSpeakingRepository(db)
-	speakingService := service.NewSpeakingService(speakingRepo, minioStorage, cfg.AIBaseURL)
-	speakingController := controller.NewSpeakingController(speakingService)
-
-	minioStorage, err := storage.NewMinIOStorage(
-		cfg.MinIOEndpoint,
-		cfg.MinIOPublicEndpoint,
-		cfg.MinIOAccessKey,
-		cfg.MinIOSecretKey,
-		cfg.MinIOBucketAudio,
-	)
-	if err != nil {
-		log.Fatalf("connect minio: %v", err)
-	}
-
 package main
 
 import (
@@ -25,7 +10,6 @@ import (
 	"github.com/easitalk/englishi-app/apps/api-go/internal/service"
 	"github.com/easitalk/englishi-app/apps/api-go/pkg/database"
 	redisclient "github.com/easitalk/englishi-app/apps/api-go/pkg/redis"
-	"github.com/easitalk/englishi-app/apps/api-go/pkg/storage"
 	"github.com/easitalk/englishi-app/apps/api-go/pkg/storage"
 	"github.com/joho/godotenv"
 )
@@ -91,7 +75,6 @@ func main() {
 		wordController,
 		errorRecordController,
 		writingController,
-		speakingController,
 		speakingController,
 		authService,
 		cfg.JWTSecret,

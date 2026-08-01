@@ -136,38 +136,4 @@ type SpeakingSession struct {
 }
 
 func (SpeakingSession) TableName() string { return "speaking_session" }
-type AudioAsset struct {
-	ID               uint64    `gorm:"primaryKey;column:id" json:"id"`
-	UserID           uint64    `gorm:"column:user_id;index" json:"userId"`
-	Bucket           string    `gorm:"column:bucket" json:"bucket"`
-	ObjectKey        string    `gorm:"column:object_key" json:"objectKey"`
-	OriginalFilename string    `gorm:"column:original_filename" json:"originalFilename"`
-	MimeType         string    `gorm:"column:mime_type" json:"mimeType"`
-	SizeBytes        uint64    `gorm:"column:size_bytes" json:"sizeBytes"`
-	Purpose          string    `gorm:"column:purpose" json:"purpose"`
-	PublicURL        string    `gorm:"column:public_url" json:"publicUrl"`
-	Status           string    `gorm:"column:status" json:"status"`
-	CreatedAt        time.Time `gorm:"column:created_at" json:"createdAt"`
-	UpdatedAt        time.Time `gorm:"column:updated_at" json:"updatedAt"`
-}
-
-func (AudioAsset) TableName() string { return "audio_asset" }
-
-type SpeakingSession struct {
-	ID                  uint64         `gorm:"primaryKey;column:id" json:"id"`
-	UserID              uint64         `gorm:"column:user_id;index" json:"userId"`
-	SessionID           string         `gorm:"column:session_id" json:"sessionId"`
-	AudioAssetID        *uint64        `gorm:"column:audio_asset_id" json:"audioAssetId,omitempty"`
-	UserText            string         `gorm:"column:user_text" json:"userText"`
-	AIReply             string         `gorm:"column:ai_reply" json:"aiReply"`
-	PronunciationResult datatypes.JSON `gorm:"column:pronunciation_result" json:"pronunciationResult"`
-	TTSText             string         `gorm:"column:tts_text" json:"ttsText"`
-	TTSAudioURL         string         `gorm:"column:tts_audio_url" json:"ttsAudioUrl"`
-	Score               *float64       `gorm:"column:score" json:"score,omitempty"`
-	Status              string         `gorm:"column:status" json:"status"`
-	CreatedAt           time.Time      `gorm:"column:created_at" json:"createdAt"`
-	UpdatedAt           time.Time      `gorm:"column:updated_at" json:"updatedAt"`
-}
-
-func (SpeakingSession) TableName() string { return "speaking_session" }
 

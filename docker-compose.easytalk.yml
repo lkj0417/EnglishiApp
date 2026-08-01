@@ -76,11 +76,6 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-easitalk_minio}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-easitalk_minio_password}
       MINIO_BUCKET_AUDIO: ${MINIO_BUCKET_AUDIO:-easitalk-audio}
-      MINIO_ENDPOINT: http://minio:9000
-      MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-http://localhost:9000}
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-easitalk_minio}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-easitalk_minio_password}
-      MINIO_BUCKET_AUDIO: ${MINIO_BUCKET_AUDIO:-easitalk-audio}
     ports:
       - "3001:3001"
     depends_on:
@@ -100,11 +95,6 @@ services:
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       LLM_MODEL: ${LLM_MODEL:-gpt-4o-mini}
-      MINIO_ENDPOINT: http://minio:9000
-      MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-http://localhost:9000}
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-easitalk_minio}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-easitalk_minio_password}
-      MINIO_BUCKET_AUDIO: ${MINIO_BUCKET_AUDIO:-easitalk-audio}
       MINIO_ENDPOINT: http://minio:9000
       MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-http://localhost:9000}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-easitalk_minio}

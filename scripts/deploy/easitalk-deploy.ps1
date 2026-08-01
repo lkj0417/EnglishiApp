@@ -67,8 +67,8 @@ function Assert-Command {
 }
 
 function Invoke-Compose {
-  param([string[]]$Args)
-  & docker compose --env-file $script:EnvFile -f $script:ComposeFile @Args
+  param([string[]]$ComposeArgs)
+  & docker compose --env-file $script:EnvFile -f $script:ComposeFile @ComposeArgs
   if ($LASTEXITCODE -ne 0) {
     throw "docker compose failed with exit code $LASTEXITCODE"
   }
@@ -141,14 +141,14 @@ if (-not (Test-Path $EnvFile)) {
 
 if ($Down) {
   Write-Step 'Stopping EasiTalk target stack'
-  Invoke-Compose @('down')
+  Invoke-Compose -ComposeArgs @('down')
   Write-Ok 'Stack stopped'
   exit 0
 }
 
 if ($Pull) {
   Write-Step 'Pulling base images'
-  Invoke-Compose @('pull')
+  Invoke-Compose -ComposeArgs @('pull')
 }
 
 Write-Step 'Starting EasiTalk target stack'
@@ -158,10 +158,10 @@ if ($Rebuild) {
 } else {
   $upArgs += '--build'
 }
-Invoke-Compose $upArgs
+Invoke-Compose -ComposeArgs $upArgs
 
 Write-Step 'Current service status'
-Invoke-Compose @('ps')
+Invoke-Compose -ComposeArgs @('ps')
 
 if (-not $SkipHealth) {
   Wait-HttpHealth -Name 'Go API' -Url 'http://localhost:3001/health' -TimeoutSeconds $TimeoutSeconds
@@ -188,7 +188,7 @@ Write-Host '  Rebuild:      .\scripts\deploy\easitalk-deploy.ps1 -Rebuild'
 
 if ($Logs) {
   Write-Step 'Streaming API and AI logs. Press Ctrl+C to stop log streaming.'
-  Invoke-Compose @('logs', '-f', 'api', 'ai-service')
+  Invoke-Compose -ComposeArgs @('logs', '-f', 'api', 'ai-service')
 }
 
 
