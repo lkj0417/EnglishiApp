@@ -6,6 +6,7 @@ import '../core/auth_store.dart';
 import '../core/models.dart';
 import 'login_screen.dart';
 import 'speaking_screen.dart';
+import 'speaking_screen.dart';
 import 'writing_screen.dart';
 import 'words_screen.dart';
 
@@ -40,6 +41,11 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('今日学习计划'),
         actions: [
+          IconButton(
+            tooltip: '口语陪练',
+            icon: const Icon(Icons.record_voice_over),
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SpeakingScreen())),
+          ),
           IconButton(
             tooltip: '口语陪练',
             icon: const Icon(Icons.record_voice_over),

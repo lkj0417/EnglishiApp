@@ -18,6 +18,11 @@ type Config struct {
 	MinIOAccessKey string
 	MinIOSecretKey string
 	MinIOBucketAudio string
+	MinIOEndpoint string
+	MinIOPublicEndpoint string
+	MinIOAccessKey string
+	MinIOSecretKey string
+	MinIOBucketAudio string
 }
 
 func Load() Config {
@@ -28,6 +33,11 @@ func Load() Config {
 		AIBaseURL:     getEnv("AI_SERVICE_URL", "http://localhost:3002"),
 		JWTSecret:     getEnv("JWT_SECRET", "dev_jwt_secret_change_in_production"),
 		LoginStateTTL: time.Duration(getEnvInt("LOGIN_STATE_TTL_SECONDS", 7*24*3600)) * time.Second,
+		MinIOEndpoint: getEnv("MINIO_ENDPOINT", "localhost:9000"),
+		MinIOPublicEndpoint: getEnv("MINIO_PUBLIC_ENDPOINT", "http://localhost:9000"),
+		MinIOAccessKey: getEnv("MINIO_ACCESS_KEY", "easitalk_minio"),
+		MinIOSecretKey: getEnv("MINIO_SECRET_KEY", "easitalk_minio_password"),
+		MinIOBucketAudio: getEnv("MINIO_BUCKET_AUDIO", "easitalk-audio"),
 		MinIOEndpoint: getEnv("MINIO_ENDPOINT", "localhost:9000"),
 		MinIOPublicEndpoint: getEnv("MINIO_PUBLIC_ENDPOINT", "http://localhost:9000"),
 		MinIOAccessKey: getEnv("MINIO_ACCESS_KEY", "easitalk_minio"),

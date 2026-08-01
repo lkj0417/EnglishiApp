@@ -27,11 +27,13 @@
 
       <nav class="nav" aria-label="主导航">
         <button class="nav-item active" data-view="dashboard">总览</button>
+        <button class="nav-item" data-view="reading">阅读透镜</button>
         <button class="nav-item" data-view="profile">学习档案</button>
         <button class="nav-item" data-view="tasks">每日任务</button>
         <button class="nav-item" data-view="words">生词本</button>
         <button class="nav-item" data-view="writing">写作批改</button>
         <button class="nav-item" data-view="speaking">口语陪练</button>
+        <button class="nav-item" data-view="echo">Echo Loop</button>
         <button class="nav-item" data-view="audio">音频上传</button>
       </nav>
 
@@ -132,6 +134,39 @@
         </div>
       </section>
 
+      <section class="view" id="view-reading">
+        <div class="grid-2 writing-grid">
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">TransLens Inspired</p>
+                <h3>阅读透镜</h3>
+              </div>
+              <button class="secondary-button" id="loadReadingSampleBtn">示例文本</button>
+            </div>
+            <p class="muted">粘贴英文材料，选中单词或句子后点击“透镜解析”。适合阅读时快速拆解生词、长句和表达。</p>
+            <label>英文材料<textarea id="readingText" rows="12" placeholder="Paste an English paragraph here..."></textarea></label>
+            <div class="button-row">
+              <button class="primary-button" id="analyzeSelectionBtn">透镜解析选中文本</button>
+              <button class="secondary-button" id="extractWordsBtn">提取疑似生词</button>
+              <button class="secondary-button" id="markFamiliarBtn">标记选中为熟悉词</button>
+              <button class="ghost-button" id="speakReadingBtn">朗读全文</button>
+            </div>
+          </article>
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">即时解释</p>
+                <h3>透镜结果</h3>
+              </div>
+            </div>
+            <div id="readingLensResult" class="result-card muted">选择文本后将在这里展示词义猜测、句法提示和可收藏生词。</div>
+            <div id="familiarWordsPanel" class="result-card muted">熟悉词过滤：暂无熟悉词。</div>
+            <div id="readingWordsList" class="list"></div>
+          </article>
+        </div>
+      </section>
+
       <section class="view" id="view-profile">
         <article class="panel">
           <div class="panel-header">
@@ -178,16 +213,23 @@
           <article class="panel">
             <div class="panel-header">
               <div>
-                <p class="eyebrow">词汇沉淀</p>
-                <h3>添加生词</h3>
+                <p class="eyebrow">Word Teacher Inspired</p>
+                <h3>单词老师</h3>
               </div>
             </div>
             <form class="form-grid">
               <label>单词<input id="wordText" value="schedule" /></label>
               <label>释义<input id="wordMeaning" value="日程；安排" /></label>
               <label class="full-span">例句<input id="wordExample" value="Let's schedule a meeting tomorrow." /></label>
-              <button class="primary-button" type="button" id="addWordBtn">保存生词</button>
+              <div class="button-row full-span">
+                <button class="primary-button" type="button" id="addWordBtn">保存生词</button>
+                <button class="secondary-button" type="button" id="teachWordBtn">生成单词讲解</button>
+                <button class="ghost-button" type="button" id="speakWordBtn">朗读单词</button>
+                <button class="secondary-button" type="button" id="startWordGameBtn">开始配对小游戏</button>
+              </div>
             </form>
+            <div id="wordTeacherResult" class="result-card muted">输入单词后生成：释义、场景例句、易错提醒和小测题。</div>
+            <div id="wordGameResult" class="result-card muted">配对小游戏会从你的生词本中抽题，答题结果可用于复习反馈。</div>
           </article>
           <article class="panel">
             <div class="panel-header">
@@ -253,6 +295,50 @@
               <button class="secondary-button" id="loadSpeakingBtn">刷新</button>
             </div>
             <div id="speakingList" class="list empty">暂无口语记录</div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="view-echo">
+        <div class="grid-2 writing-grid">
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Echo-Loop Inspired</p>
+                <h3>跟读循环训练</h3>
+              </div>
+            </div>
+            <label>跟读句子<textarea id="echoPhrase" rows="4">Could you help me reschedule our meeting for tomorrow morning?</textarea></label>
+            <div class="learning-flow" id="echoFlowPanel">
+              <button class="flow-step" data-stage="blindListen">1 盲听</button>
+              <button class="flow-step" data-stage="intensiveListen">2 精听</button>
+              <button class="flow-step" data-stage="shadowing">3 跟读</button>
+              <button class="flow-step" data-stage="retell">4 复述</button>
+              <button class="flow-step" data-stage="review">5 复习</button>
+            </div>
+            <div class="form-grid">
+              <label>循环次数<input id="echoRepeat" type="number" min="1" max="10" value="3" /></label>
+              <label>播放语速<input id="echoRate" type="number" min="0.5" max="1.2" step="0.1" value="0.85" /></label>
+            </div>
+            <label>复述内容<textarea id="echoRetell" rows="4" placeholder="听完和跟读后，用自己的话复述这句话或场景。"></textarea></label>
+            <div class="button-row">
+              <button class="primary-button" id="playEchoBtn">循环播放标准音</button>
+              <button class="secondary-button" id="startRecordBtn">开始录音</button>
+              <button class="danger-button" id="stopRecordBtn" disabled>停止录音</button>
+              <button class="ghost-button" id="sendEchoBtn">上传并评分</button>
+              <button class="secondary-button" id="saveRetellBtn">保存复述</button>
+            </div>
+            <audio id="echoPreview" controls hidden></audio>
+            <div id="echoStatus" class="result-card muted">先听标准音，再录制自己的跟读音频，最后上传并交给口语 Agent 评分。</div>
+          </article>
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">训练反馈</p>
+                <h3>Echo Loop 结果</h3>
+              </div>
+            </div>
+            <div id="echoResult" class="result-card muted">跟读评分、AI 反馈和音频资产 ID 将显示在这里。</div>
           </article>
         </div>
       </section>

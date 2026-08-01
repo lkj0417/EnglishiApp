@@ -149,3 +149,63 @@ class SpeakingChatRequest:
         )
 
 
+@dataclass(frozen=True)
+class WritingCorrectRequest:
+    user_id: int
+    session_id: str
+    title: str
+    content: str
+
+    @classmethod
+    def from_payload(cls, payload: dict[str, Any]) -> "WritingCorrectRequest":
+        user_id = int(payload.get("userId") or payload.get("user_id") or 0)
+        session_id = str(payload.get("sessionId") or payload.get("session_id") or "writing-default").strip()
+        title = str(payload.get("title") or "Untitled Writing").strip()
+        content = str(payload.get("content") or payload.get("originalContent") or "").strip()
+
+        if user_id <= 0:
+            raise ValueError("userId must be greater than 0")
+        if not session_id or len(session_id) > 128:
+            raise ValueError("sessionId is required and must be <= 128 characters")
+        if not title or len(title) > 255:
+            raise ValueError("title is required and must be <= 255 characters")
+        if len(content) < 10 or len(content) > 12000:
+            raise ValueError("content length must be between 10 and 12000 characters")
+        return cls(user_id=user_id, session_id=session_id, title=title, content=content)
+
+
+@dataclass(frozen=True)
+class SpeakingChatRequest:
+    user_id: int
+    session_id: str
+    message: str
+    audio_asset_id: int | None
+    audio_url: str | None
+
+    @classmethod
+    def from_payload(cls, payload: dict[str, Any]) -> "SpeakingChatRequest":
+        user_id = int(payload.get("userId") or payload.get("user_id") or 0)
+        session_id = str(payload.get("sessionId") or payload.get("session_id") or "speaking-default").strip()
+        message = str(payload.get("message") or payload.get("transcript") or "").strip()
+        audio_asset_id_raw = payload.get("audioAssetId") or payload.get("audio_asset_id")
+        audio_asset_id = int(audio_asset_id_raw) if audio_asset_id_raw else None
+        audio_url = payload.get("audioUrl") or payload.get("audio_url")
+        audio_url = str(audio_url).strip() if audio_url else None
+
+        if user_id <= 0:
+            raise ValueError("userId must be greater than 0")
+        if not session_id or len(session_id) > 128:
+            raise ValueError("sessionId is required and must be <= 128 characters")
+        if not message and not audio_url:
+            raise ValueError("message or audioUrl is required")
+        if len(message) > 4000:
+            raise ValueError("message must be <= 4000 characters")
+        return cls(
+            user_id=user_id,
+            session_id=session_id,
+            message=message,
+            audio_asset_id=audio_asset_id,
+            audio_url=audio_url,
+        )
+
+

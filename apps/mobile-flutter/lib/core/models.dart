@@ -173,4 +173,29 @@ class SpeakingSession {
     );
   }
 }
+class SpeakingSession {
+  SpeakingSession({
+    required this.id,
+    required this.sessionId,
+    required this.userText,
+    required this.aiReply,
+    required this.score,
+  });
+
+  final int id;
+  final String sessionId;
+  final String userText;
+  final String aiReply;
+  final double? score;
+
+  factory SpeakingSession.fromJson(Map<String, dynamic> json) {
+    return SpeakingSession(
+      id: (json['id'] as num).toInt(),
+      sessionId: json['sessionId']?.toString() ?? '',
+      userText: json['userText']?.toString() ?? '',
+      aiReply: json['aiReply']?.toString() ?? '',
+      score: (json['score'] as num?)?.toDouble(),
+    );
+  }
+}
 

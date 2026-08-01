@@ -64,6 +64,7 @@ func NewRouter(
 		v1.GET("/users/:userId/writing-submissions", writingController.List)
 		v1.POST("/users/:userId/writing-submissions/correct", writingController.Correct)
 
+
 		v1.POST("/users/:userId/audio-assets", speakingController.UploadAudio)
 		v1.GET("/users/:userId/speaking-sessions", speakingController.ListSessions)
 		v1.POST("/users/:userId/speaking/chat", speakingController.Chat)

@@ -9,6 +9,7 @@ Flutter target mobile app for the EasiTalk migration.
 - Vocabulary: list, add, review words
 - Writing correction: submit essay and view correction history
 - Speaking practice: text-based speaking chat with simulated pronunciation score
+- Speaking practice: text-based speaking chat with simulated pronunciation score
 
 ## Run
 

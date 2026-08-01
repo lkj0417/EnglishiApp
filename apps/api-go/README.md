@@ -32,4 +32,7 @@ go run ./cmd/api
 - `POST /v1/users/{userId}/audio-assets`
 - `GET /v1/users/{userId}/speaking-sessions`
 - `POST /v1/users/{userId}/speaking/chat`
+- `POST /v1/users/{userId}/audio-assets`
+- `GET /v1/users/{userId}/speaking-sessions`
+- `POST /v1/users/{userId}/speaking/chat`
 

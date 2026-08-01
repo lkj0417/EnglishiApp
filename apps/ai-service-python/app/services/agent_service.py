@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from app.agents.context_manager import ContextManager
 from app.agents.memory_manager import MemoryManager
 from app.agents.prompt_assembler import PromptAssembler
@@ -151,46 +153,182 @@ class AgentService:
 
     @staticmethod
     def _build_structured_daily_tasks(memory: dict, available_minutes: int, ai_summary: str) -> list[dict]:
-        review_minutes = max(5, round(available_minutes * 0.25))
-        input_minutes = max(5, round(available_minutes * 0.30))
-        output_minutes = max(5, round(available_minutes * 0.30))
-        weakness_minutes = max(5, available_minutes - review_minutes - input_minutes - output_minutes)
+        """Build a dynamic four-skill curriculum from the user's level and weaknesses.
 
-        weak_grammar = ", ".join(memory.get("weak_grammar_points") or []) or "高频薄弱语法"
-        speaking_weaknesses = ", ".join(memory.get("speaking_weaknesses") or []) or "口语表达自然度"
-        writing_weaknesses = ", ".join(memory.get("writing_weaknesses") or []) or "句式升级"
+        The plan is deterministic and schema-stable so Go/Web can render it reliably;
+        the LLM summary is used as the teaching rationale while task allocation is kept
+        auditable and safe for production.
+        """
+        level = str(memory.get("cefr_level") or "A1").upper()
+        goal = memory.get("learning_goal") or "综合英语提升"
+        weak_grammar = AgentService._join(memory.get("weak_grammar_points"), "基础时态与句型")
+        speaking_weaknesses = AgentService._join(memory.get("speaking_weaknesses"), "发音、停顿与表达自然度")
+        writing_weaknesses = AgentService._join(memory.get("writing_weaknesses"), "句式丰富度与逻辑衔接")
+        error_words = AgentService._join(memory.get("error_prone_words"), "近期错词与生词")
 
-        return [
+        skill_weights = AgentService._skill_weights(goal, memory)
+        minutes = AgentService._allocate_minutes(available_minutes, skill_weights)
+        difficulty = AgentService._difficulty_for_level(level)
+        language_policy = "中英双语讲解" if level in {"A1", "A2"} else "英文优先，复杂点中文补充"
+
+        tasks = [
             {
                 "taskType": "review",
-                "title": "旧知识复习：生词与错题回顾",
-                "estimatedMinutes": review_minutes,
-                "learningValue": "巩固遗忘曲线中的高风险内容，降低重复错误。",
-                "instructions": "复习最近易错生词、错句，并完成 3 道快速回忆题。",
+                "skill": "review",
+                "module": "语境化复习",
+                "title": f"复习：{error_words}",
+                "estimatedMinutes": minutes["review"],
+                "difficulty": difficulty,
+                "level": level,
+                "languagePolicy": language_policy,
+                "learningValue": "先巩固个人错词、错句和已暴露薄弱点，避免今天的新输入建立在旧错误上。",
+                "instructions": "用原句语境复习 3-5 个生词/错句：先遮住释义回忆，再朗读原句，最后写出一个新例句。",
+                "outputRequirement": "提交至少 1 个新造句或口头复述。",
+                "successCriteria": ["能说出词义", "能在新句子中正确使用", "同类错误不重复出现"],
+                "adjustmentSignal": "若回忆失败超过 40%，明日增加复习占比并降低新内容难度。",
                 "aiSummary": ai_summary[:500],
             },
             {
-                "taskType": "new_input",
-                "title": f"新知识学习：{weak_grammar}",
-                "estimatedMinutes": input_minutes,
-                "learningValue": "围绕当前薄弱语法补齐输入，控制在用户可理解难度内。",
-                "instructions": "阅读 1 组正误对比例句，并完成替换练习。",
+                "taskType": "listening",
+                "skill": "listening",
+                "module": "听力输入",
+                "title": f"听力：{goal} 场景盲听 + 精听",
+                "estimatedMinutes": minutes["listening"],
+                "difficulty": difficulty,
+                "level": level,
+                "languagePolicy": language_policy,
+                "learningValue": "听力是后续口语输出的输入来源，先建立声音、词义和句意的连接。",
+                "instructions": f"选择 {AgentService._scene_for_goal(goal)} 的短材料：先不看文本听 1 遍，再逐句精听并记录没听出的关键词。",
+                "outputRequirement": "写下 3 个听到的关键词，并标记最难的一句。",
+                "successCriteria": ["能抓住主旨", "能复述关键词", "能定位 1 个难句"],
+                "adjustmentSignal": "若主旨听不出，明日材料降一级；若能完整复述，明日增加语速或长度。",
             },
             {
-                "taskType": "output",
-                "title": "输出练习：场景口语或短写作",
-                "estimatedMinutes": output_minutes,
-                "learningValue": "通过主动输出暴露真实短板，形成 AI 复盘数据。",
-                "instructions": f"围绕学习目标进行 3 轮输出，重点关注：{speaking_weaknesses}。",
+                "taskType": "reading",
+                "skill": "reading",
+                "module": "阅读透镜",
+                "title": f"阅读：围绕 {weak_grammar} 的短文理解",
+                "estimatedMinutes": minutes["reading"],
+                "difficulty": difficulty,
+                "level": level,
+                "languagePolicy": language_policy,
+                "learningValue": "阅读负责补充可理解输入，并把薄弱语法放回真实语境中理解。",
+                "instructions": f"阅读一段 {AgentService._reading_length(level)} 的材料，使用阅读透镜提取低曝光生词，重点观察：{weak_grammar}。",
+                "outputRequirement": "收藏 2 个有价值表达，并用自己的话写 1 句中文主旨。",
+                "successCriteria": ["理解主旨", "识别目标语法", "至少沉淀 1 个可复用表达"],
+                "adjustmentSignal": "若生词过多，明日降低文本难度；若生词很少，明日提高材料长度。",
             },
             {
-                "taskType": "weakness_drill",
-                "title": "短板专项：表达优化与复盘",
-                "estimatedMinutes": weakness_minutes,
-                "learningValue": "针对近期高频问题进行专项强化。",
-                "instructions": f"完成针对性改写与复盘，写作重点关注：{writing_weaknesses}。",
+                "taskType": "speaking",
+                "skill": "speaking",
+                "module": "口语输出",
+                "title": f"口语：{AgentService._scene_for_goal(goal)} 三轮表达",
+                "estimatedMinutes": minutes["speaking"],
+                "difficulty": difficulty,
+                "level": level,
+                "languagePolicy": language_policy,
+                "learningValue": "通过主动说暴露真实卡点，让 AI 把发音、语序和中式表达沉淀进学习档案。",
+                "instructions": f"围绕今日听读材料进行 3 轮口语回答，每轮只说 1-2 句，重点修正：{speaking_weaknesses}。",
+                "outputRequirement": "完成至少 1 次录音或文本口语提交。",
+                "successCriteria": ["能完成回答", "停顿减少", "至少修正 1 个表达"],
+                "adjustmentSignal": "若表达卡顿严重，明日增加句型支架；若表达流畅，明日增加追问轮次。",
+            },
+            {
+                "taskType": "writing",
+                "skill": "writing",
+                "module": "写作输出",
+                "title": f"写作：{goal} 迷你输出",
+                "estimatedMinutes": minutes["writing"],
+                "difficulty": difficulty,
+                "level": level,
+                "languagePolicy": language_policy,
+                "learningValue": "写作把输入内容转化为可检查的结构化输出，便于 AI 精准定位语法和逻辑短板。",
+                "instructions": f"写 {AgentService._writing_length(level)}，主题沿用今日听读材料，重点检查：{writing_weaknesses}。",
+                "outputRequirement": "提交短文给 AI 批改，并把 1 个高频错误加入错题库。",
+                "successCriteria": ["主题明确", "句子基本正确", "至少完成 1 处表达升级"],
+                "adjustmentSignal": "若错误集中在同类语法，明日安排专项 drill；若结构清晰，明日增加连接词与复杂句。",
             },
         ]
+        return [task for task in tasks if task["estimatedMinutes"] > 0]
+
+    @staticmethod
+    def _skill_weights(goal: str, memory: dict) -> dict[str, float]:
+        weights = {"review": 0.18, "listening": 0.20, "reading": 0.20, "speaking": 0.22, "writing": 0.20}
+        goal_text = goal.lower()
+        if any(keyword in goal_text for keyword in ["口语", "speaking", "travel", "conversation"]):
+            weights["speaking"] += 0.10
+            weights["listening"] += 0.05
+            weights["writing"] -= 0.08
+            weights["reading"] -= 0.07
+        if any(keyword in goal_text for keyword in ["写作", "writing", "ielts", "雅思", "考试"]):
+            weights["writing"] += 0.10
+            weights["reading"] += 0.05
+            weights["speaking"] -= 0.05
+            weights["listening"] -= 0.05
+        if memory.get("speaking_weaknesses"):
+            weights["speaking"] += 0.04
+        if memory.get("writing_weaknesses"):
+            weights["writing"] += 0.04
+        if memory.get("error_prone_words"):
+            weights["review"] += 0.04
+        total = sum(max(value, 0.05) for value in weights.values())
+        return {key: max(value, 0.05) / total for key, value in weights.items()}
+
+    @staticmethod
+    def _allocate_minutes(available_minutes: int, weights: dict[str, float]) -> dict[str, int]:
+        if available_minutes < 25:
+            active = ["review", "listening", "speaking"]
+        elif available_minutes < 40:
+            active = ["review", "listening", "reading", "speaking"]
+        else:
+            active = ["review", "listening", "reading", "speaking", "writing"]
+        total_weight = sum(weights[key] for key in active)
+        minutes = {key: 0 for key in weights}
+        remaining = available_minutes
+        for index, key in enumerate(active):
+            if index == len(active) - 1:
+                minutes[key] = max(5, remaining)
+            else:
+                value = max(5, round(available_minutes * weights[key] / total_weight))
+                minutes[key] = value
+                remaining -= value
+        return minutes
+
+    @staticmethod
+    def _difficulty_for_level(level: str) -> str:
+        return {
+            "A1": "i+1：短句、慢速、强支架",
+            "A2": "i+1：日常场景、基础复合句",
+            "B1": "i+1：真实场景、适度追问",
+            "B2": "i+1：观点表达、复杂句与地道替换",
+            "C1": "高阶表达、语域和论证质量",
+        }.get(level, "i+1：略高于当前水平")
+
+    @staticmethod
+    def _scene_for_goal(goal: str) -> str:
+        if "商务" in goal:
+            return "商务会议/邮件沟通"
+        if "雅思" in goal or "考试" in goal:
+            return "考试口语/写作话题"
+        if "旅行" in goal:
+            return "旅行问路、入住和点餐"
+        return "日常生活交流"
+
+    @staticmethod
+    def _reading_length(level: str) -> str:
+        return "80-120 词" if level in {"A1", "A2"} else "150-220 词"
+
+    @staticmethod
+    def _writing_length(level: str) -> str:
+        return "3-5 句" if level in {"A1", "A2"} else "80-120 词"
+
+    @staticmethod
+    def _join(values: object, fallback: str) -> str:
+        if isinstance(values, list) and values:
+            return "、".join(str(item) for item in values if str(item).strip()) or fallback
+        if isinstance(values, str) and values.strip():
+            return values
+        return fallback
 
     @staticmethod
     def _build_structured_writing_result(original: str, llm_feedback: str) -> dict:

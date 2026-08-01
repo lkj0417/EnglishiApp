@@ -77,6 +77,15 @@ def speaking_chat(
     request = SpeakingChatRequest.from_payload(payload)
     return ok(agent_service.speaking_chat(request), x_trace_id)
 
+@router.post("/v1/speaking/chat")
+def speaking_chat(
+    payload: dict[str, Any] = Body(...),
+    x_trace_id: str = Header(default="", alias="X-Trace-Id"),
+    agent_service: AgentService = Depends(get_agent_service),
+) -> dict:
+    request = SpeakingChatRequest.from_payload(payload)
+    return ok(agent_service.speaking_chat(request), x_trace_id)
+
 
 @router.post("/v1/context/clear")
 def clear_context(

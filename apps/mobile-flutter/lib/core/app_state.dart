@@ -1,3 +1,4 @@
+  List<SpeakingSession> speakingSessions = [];
 import 'package:flutter/foundation.dart';
 
 import 'api_client.dart';
@@ -11,6 +12,7 @@ class AppState extends ChangeNotifier {
   bool loadingTasks = false;
   bool loadingWords = false;
   bool correctingWriting = false;
+  bool sendingSpeaking = false;
   bool sendingSpeaking = false;
   String? error;
   List<DailyTask> tasks = [];
@@ -107,6 +109,33 @@ class AppState extends ChangeNotifier {
     notifyListeners();
     try {
       writingHistory = await _apiClient.fetchWritingHistory(userId: userId);
+    } catch (e) {
+      error = e.toString();
+    } finally {
+      notifyListeners();
+    }
+  }
+
+  Future<void> sendSpeakingMessage({required int userId, required String sessionId, required String message}) async {
+    sendingSpeaking = true;
+    error = null;
+    notifyListeners();
+    try {
+      final session = await _apiClient.speakingChat(userId: userId, sessionId: sessionId, message: message);
+      speakingSessions = [session, ...speakingSessions];
+    } catch (e) {
+      error = e.toString();
+    } finally {
+      sendingSpeaking = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadSpeakingSessions(int userId) async {
+    error = null;
+    notifyListeners();
+    try {
+      speakingSessions = await _apiClient.fetchSpeakingSessions(userId: userId);
     } catch (e) {
       error = e.toString();
     } finally {

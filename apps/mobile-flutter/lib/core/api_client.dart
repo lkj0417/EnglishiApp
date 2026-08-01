@@ -219,6 +219,35 @@ class ApiClient {
       },
     ).data;
   }
+  Future<SpeakingSession> speakingChat({
+    required int userId,
+    required String sessionId,
+    required String message,
+  }) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/v1/users/$userId/speaking/chat',
+      data: {'sessionId': sessionId, 'message': message},
+      options: _authOptions(),
+    );
+    return _decodeEnvelope<SpeakingSession>(
+      response.data,
+      (raw) => SpeakingSession.fromJson(raw as Map<String, dynamic>),
+    ).data;
+  }
+
+  Future<List<SpeakingSession>> fetchSpeakingSessions({required int userId}) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/v1/users/$userId/speaking-sessions',
+      options: _authOptions(),
+    );
+    return _decodeEnvelope<List<SpeakingSession>>(
+      response.data,
+      (raw) {
+        final items = (raw as Map<String, dynamic>)['items'] as List<dynamic>? ?? [];
+        return items.map((item) => SpeakingSession.fromJson(item as Map<String, dynamic>)).toList();
+      },
+    ).data;
+  }
 
   ApiEnvelope<T> _decodeEnvelope<T>(
     Map<String, dynamic>? json,

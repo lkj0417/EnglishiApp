@@ -59,5 +59,19 @@ void main() {
     expect(session.sessionId, 's1');
     expect(session.score, 78);
   });
+
+  test('SpeakingSession parses speaking payload', () {
+    final session = SpeakingSession.fromJson({
+      'id': 7,
+      'sessionId': 's1',
+      'userText': 'I want to practice English.',
+      'aiReply': 'Great, let us start.',
+      'score': 78,
+    });
+
+    expect(session.id, 7);
+    expect(session.sessionId, 's1');
+    expect(session.score, 78);
+  });
 }
 
