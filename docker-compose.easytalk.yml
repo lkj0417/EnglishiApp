@@ -1,0 +1,115 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: easitalk_mysql
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-easitalk_root_password}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-easitalk}
+      MYSQL_USER: ${MYSQL_USER:-easitalk}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-easitalk_dev_password}
+    ports:
+      - "3306:3306"
+    volumes:
+      - easitalk_mysql_data:/var/lib/mysql
+      - ./infra/mysql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-easitalk_root_password}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: easitalk_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - easitalk_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    container_name: easitalk_minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-easitalk_minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-easitalk_minio_password}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - easitalk_minio_data:/data
+
+  minio-init:
+    image: minio/mc:RELEASE.2025-04-16T18-13-26Z
+    container_name: easitalk_minio_init
+    depends_on:
+      - minio
+    environment:
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-easitalk_minio}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-easitalk_minio_password}
+      MINIO_BUCKET_AUDIO: ${MINIO_BUCKET_AUDIO:-easitalk-audio}
+      MINIO_BUCKET_MATERIALS: ${MINIO_BUCKET_MATERIALS:-easitalk-materials}
+    volumes:
+      - ./infra/minio/create-buckets.sh:/create-buckets.sh:ro
+    entrypoint: ["/bin/sh", "/create-buckets.sh"]
+
+  api:
+    build:
+      context: ./apps/api-go
+      dockerfile: Dockerfile.dev
+    container_name: easitalk_api_go
+    environment:
+      API_PORT: 3001
+      MYSQL_DSN: ${MYSQL_DSN:-easitalk:easitalk_dev_password@tcp(mysql:3306)/easitalk?charset=utf8mb4&parseTime=True&loc=Local}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      AI_SERVICE_URL: http://ai-service:3002
+      JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_in_production}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-http://localhost:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-easitalk_minio}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-easitalk_minio_password}
+      MINIO_BUCKET_AUDIO: ${MINIO_BUCKET_AUDIO:-easitalk-audio}
+    ports:
+      - "3001:3001"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  ai-service:
+    build:
+      context: ./apps/ai-service-python
+      dockerfile: Dockerfile.dev
+    container_name: easitalk_ai_python
+    environment:
+      AI_SERVICE_PORT: 3002
+      DATABASE_URL: ${DATABASE_URL:-mysql+pymysql://easitalk:easitalk_dev_password@mysql:3306/easitalk}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-gpt-4o-mini}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-http://localhost:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-easitalk_minio}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-easitalk_minio_password}
+      MINIO_BUCKET_AUDIO: ${MINIO_BUCKET_AUDIO:-easitalk-audio}
+    ports:
+      - "3002:3002"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  easitalk_mysql_data:
+  easitalk_redis_data:
+  easitalk_minio_data:
+

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CopilotDiffPersistence">
+    <option name="pendingDiffs">
+      <map>
+        <entry key="$PROJECT_DIR$/apps/api-go/internal/controller/profile_controller.go">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/apps/api-go/internal/controller/profile_controller.go" />
+              <option name="updatedContent" value="package controller&#10;&#10;import (&#10;&#9;&quot;net/http&quot;&#10;&#9;&quot;strconv&quot;&#10;&#10;&#9;&quot;github.com/easitalk/englishi-app/apps/api-go/internal/response&quot;&#10;&#9;&quot;github.com/easitalk/englishi-app/apps/api-go/internal/service&quot;&#10;&#9;&quot;github.com/gin-gonic/gin&quot;&#10;)&#10;&#10;type ProfileController struct {&#10;&#9;service service.ProfileService&#10;}&#10;&#10;func NewProfileController(profileService service.ProfileService) *ProfileController {&#10;&#9;return &amp;ProfileController{service: profileService}&#10;}&#10;&#10;func (ctl *ProfileController) Get(c *gin.Context) {&#10;&#9;userID, ok := parseUserID(c)&#10;&#9;if !ok {&#10;&#9;&#9;return&#10;&#9;}&#10;&#10;&#9;profile, err := ctl.service.GetProfile(c.Request.Context(), userID)&#10;&#9;if err != nil {&#10;&#9;&#9;response.Fail(c, http.StatusNotFound, 20001, err.Error())&#10;&#9;&#9;return&#10;&#9;}&#10;&#9;response.OK(c, profile)&#10;}&#10;&#10;func (ctl *ProfileController) Upsert(c *gin.Context) {&#10;&#9;userID, ok := parseUserID(c)&#10;&#9;if !ok {&#10;&#9;&#9;return&#10;&#9;}&#10;&#10;&#9;var input service.UpdateProfileInput&#10;&#9;if err := c.ShouldBindJSON(&amp;input); err != nil {&#10;&#9;&#9;response.Fail(c, http.StatusBadRequest, 10001, err.Error())&#10;&#9;&#9;return&#10;&#9;}&#10;&#10;&#9;profile, err := ctl.service.UpdateProfile(c.Request.Context(), userID, input)&#10;&#9;if err != nil {&#10;&#9;&#9;response.Fail(c, http.StatusInternalServerError, 10002, err.Error())&#10;&#9;&#9;return&#10;&#9;}&#10;&#9;response.OK(c, profile)&#10;}&#10;&#10;func parseUserID(c *gin.Context) (uint64, bool) {&#10;&#9;userID, err := strconv.ParseUint(c.Param(&quot;userId&quot;), 10, 64)&#10;&#9;if err != nil || userID == 0 {&#10;&#9;&#9;response.Fail(c, http.StatusBadRequest, 10001, &quot;invalid userId&quot;)&#10;&#9;&#9;return 0, false&#10;&#9;}&#10;&#9;return userID, true&#10;}&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>

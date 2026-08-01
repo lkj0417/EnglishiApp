@@ -276,6 +276,46 @@ sudo systemctl start docker
 
 ## 4. 本地开发部署
 
+### 4.0 EasiTalk 目标栈一键部署（Flutter / Go / Python / MySQL / Redis / MinIO）
+
+> 适用于 Phase5/Phase6 迁移后的目标技术栈。首次运行会自动从 `.env.easytalk.example` 生成 `.env.easytalk`，并通过 `docker-compose.easytalk.yml` 启动 MySQL、Redis、MinIO、Go API、Python AI Service。
+
+Windows PowerShell：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\deploy\easitalk-deploy.ps1
+```
+
+重新构建并启动：
+
+```powershell
+.\scripts\deploy\easitalk-deploy.ps1 -Rebuild
+```
+
+停止目标栈：
+
+```powershell
+.\scripts\deploy\easitalk-deploy.ps1 -Down
+```
+
+macOS / Linux：
+
+```bash
+chmod +x ./scripts/deploy/easitalk-deploy.sh
+./scripts/deploy/easitalk-deploy.sh --rebuild
+```
+
+目标栈服务地址：
+
+| 服务 | 地址 |
+|------|------|
+| Go API Health | `http://localhost:3001/health` |
+| Python AI Health | `http://localhost:3002/health` |
+| Python AI OpenAPI | `http://localhost:3002/docs` |
+| MinIO Console | `http://localhost:9001` |
+| MySQL | `localhost:3306` |
+| Redis | `localhost:6379` |
+
 ### 4.1 获取代码
 
 ```bash
@@ -310,14 +350,14 @@ OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxx
 # 安全密钥（必须修改！）
 # ─────────────────────────────────────────────
 JWT_SECRET=请替换为至少64位随机字符串
-ENCRYPTION_KEY=请替换为32位随机字符串!!  # 用于加密数据库中的 API Key
+ENCRYPTION_KEY=请替换为32位随机字符串!!
 
 # ─────────────────────────────────────────────
 # 管理员账户（首次 seed 时使用）
 # ─────────────────────────────────────────────
 ADMIN_EMAIL=admin@englishi.app
-ADMIN_PASSWORD=Admin@123456          # 登录后请立即修改
-ADMIN_SECRET=请替换为复杂字符串       # 注册管理员时需要提供的密钥
+ADMIN_PASSWORD=Admin@123456
+ADMIN_SECRET=请替换为复杂字符串
 
 # ─────────────────────────────────────────────
 # Azure 语音（可选，用于 TTS 和发音评估）
@@ -1150,6 +1190,15 @@ docker compose exec redis redis-cli flushdb   # 清除 Redis 缓存（谨慎！�
 | 🐛 其它 | 写作历史按提交时间倒序返回；移除冗余的 `dev:workers` 脚本与重复 Worker 定义。 |
 
 > 升级后请执行 `pnpm install`（已调整 workspace 依赖）。数据库结构未变更，无需重新迁移；能力快照将从升级后第一次学习开始累积。
+
+---
+
+### 附录 E：相关规划文档
+
+| 文档 | 说明 |
+|------|------|
+| [`Phase5_EasiTalkAI系统架构设计文档_V1.0.md`](./Phase5_EasiTalkAI系统架构设计文档_V1.0.md) | EasiTalk AI V1.0 系统架构设计草案，包含目标技术栈、服务拆分、数据库设计、AI Agent 架构、常驻系统提示词与动态任务提示词；其中 Flutter / Go / Python FastAPI / MySQL / MinIO 等选型与当前仓库已落地技术栈不同，落地前需先确认迁移策略。 |
+| [`Phase6_技术栈迁移实施方案.md`](./Phase6_技术栈迁移实施方案.md) | 明确当前 TypeScript 架构不保留，规划移动端迁移 Flutter、后端 API 迁移 Go Gin、数据库切换 MySQL、AI Service 迁移 Python FastAPI 的分阶段实施路径。 |
 
 ---
 
