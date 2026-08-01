@@ -309,12 +309,15 @@ chmod +x ./scripts/deploy/easitalk-deploy.sh
 
 | 服务 | 地址 |
 |------|------|
+| Web 使用入口 | `http://localhost:3001/web` |
 | Go API Health | `http://localhost:3001/health` |
 | Python AI Health | `http://localhost:3002/health` |
 | Python AI OpenAPI | `http://localhost:3002/docs` |
 | MinIO Console | `http://localhost:9001` |
 | MySQL | `localhost:3306` |
 | Redis | `localhost:6379` |
+
+浏览器打开 `http://localhost:3001/web` 后可直接使用：注册/登录、学习档案、AI 每日任务、生词复习、写作批改、口语陪练、音频上传。该 Web 入口由 Go API 内置静态资源提供，无需额外启动 Node/Next 前端服务。
 
 ### 4.1 获取代码
 

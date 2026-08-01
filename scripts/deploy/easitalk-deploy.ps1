@@ -172,6 +172,7 @@ if (-not $SkipHealth) {
 
 Write-Step 'Deployment completed'
 Write-Host 'Service URLs:' -ForegroundColor White
+Write-Host '  Web App:             http://localhost:3001/web'
 Write-Host '  Go API Health:       http://localhost:3001/health'
 Write-Host '  AI Service Health:   http://localhost:3002/health'
 Write-Host '  API Swagger/OpenAPI: http://localhost:3002/docs'

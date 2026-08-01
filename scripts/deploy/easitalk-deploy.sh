@@ -123,6 +123,7 @@ fi
 step "Deployment completed"
 cat <<'URLS'
 Service URLs:
+  Web App:             http://localhost:3001/web
   Go API Health:       http://localhost:3001/health
   AI Service Health:   http://localhost:3002/health
   API Swagger/OpenAPI: http://localhost:3002/docs

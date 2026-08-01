@@ -1,6 +1,7 @@
 package server
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/easitalk/englishi-app/apps/api-go/internal/controller"
@@ -22,6 +23,12 @@ func NewRouter(
 ) *gin.Engine {
 	router := gin.New()
 	router.Use(gin.Logger(), gin.Recovery(), traceMiddleware())
+	router.Static("/web/assets", "./web/assets")
+	router.StaticFile("/web", "./web/index.html")
+	router.StaticFile("/web/", "./web/index.html")
+	router.GET("/", func(c *gin.Context) {
+		c.Redirect(http.StatusFound, "/web")
+	})
 
 	router.GET("/health", func(c *gin.Context) {
 		response.OK(c, gin.H{

@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EasiTalk AI 学习控制台</title>
+  <link rel="stylesheet" href="/web/assets/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">E</div>
+        <div>
+          <h1>EasiTalk AI</h1>
+          <p>个性化英语学习 Web 入口</p>
+        </div>
+      </div>
+
+      <div class="user-card" id="userCard">
+        <span class="status-dot" id="apiStatusDot"></span>
+        <div>
+          <strong id="userName">未登录</strong>
+          <small id="userMeta">连接后端中...</small>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="主导航">
+        <button class="nav-item active" data-view="dashboard">总览</button>
+        <button class="nav-item" data-view="profile">学习档案</button>
+        <button class="nav-item" data-view="tasks">每日任务</button>
+        <button class="nav-item" data-view="words">生词本</button>
+        <button class="nav-item" data-view="writing">写作批改</button>
+        <button class="nav-item" data-view="speaking">口语陪练</button>
+        <button class="nav-item" data-view="audio">音频上传</button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="ghost-button" id="refreshAllBtn">刷新数据</button>
+        <button class="danger-button" id="logoutBtn">退出登录</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">EasiTalk V1.0</p>
+          <h2 id="pageTitle">学习总览</h2>
+        </div>
+        <div class="quick-actions">
+          <a class="link-button" href="/health" target="_blank" rel="noreferrer">Go Health</a>
+          <a class="link-button" href="http://localhost:3002/docs" target="_blank" rel="noreferrer">AI Docs</a>
+          <a class="primary-button" href="http://localhost:9001" target="_blank" rel="noreferrer">MinIO</a>
+        </div>
+      </header>
+
+      <section class="notice" id="toast" hidden></section>
+
+      <section class="auth-panel" id="authPanel">
+        <div class="panel split-panel">
+          <div>
+            <p class="eyebrow">开始使用</p>
+            <h3>登录或注册后使用完整学习服务</h3>
+            <p class="muted">Web 入口直接调用 Go REST API，并通过 Go API 联动 Python AI Agent、MySQL、Redis 和 MinIO。</p>
+          </div>
+          <form id="authForm" class="form-grid">
+            <label>
+              邮箱
+              <input id="authEmail" type="email" value="demo@easitalk.local" required />
+            </label>
+            <label>
+              昵称（注册时使用）
+              <input id="authNickname" type="text" value="Demo Learner" />
+            </label>
+            <label>
+              密码
+              <input id="authPassword" type="password" value="Password123" minlength="6" required />
+            </label>
+            <div class="button-row">
+              <button class="primary-button" type="button" id="loginBtn">登录</button>
+              <button class="secondary-button" type="button" id="registerBtn">注册</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section class="view active" id="view-dashboard">
+        <div class="stats-grid">
+          <article class="stat-card">
+            <span>今日任务</span>
+            <strong id="statTasks">-</strong>
+            <small>pending / completed</small>
+          </article>
+          <article class="stat-card">
+            <span>生词数量</span>
+            <strong id="statWords">-</strong>
+            <small>个人生词本</small>
+          </article>
+          <article class="stat-card">
+            <span>写作批改</span>
+            <strong id="statWriting">-</strong>
+            <small>历史提交</small>
+          </article>
+          <article class="stat-card">
+            <span>口语会话</span>
+            <strong id="statSpeaking">-</strong>
+            <small>练习记录</small>
+          </article>
+        </div>
+
+        <div class="grid-2">
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">今日学习</p>
+                <h3>任务快照</h3>
+              </div>
+              <button class="secondary-button" id="quickGeneratePlanBtn">生成计划</button>
+            </div>
+            <div id="dashboardTasks" class="list empty">登录后展示今日任务</div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">AI 个性化</p>
+                <h3>学习档案摘要</h3>
+              </div>
+            </div>
+            <div id="profileSummary" class="profile-summary muted">暂无档案数据</div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="view-profile">
+        <article class="panel">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">长期记忆</p>
+              <h3>用户学习档案</h3>
+            </div>
+            <button class="primary-button" id="saveProfileBtn">保存档案</button>
+          </div>
+          <div class="form-grid profile-form">
+            <label>CEFR 等级<input id="profileCefr" value="A2" /></label>
+            <label>学习目标<input id="profileGoal" value="口语提升" /></label>
+            <label>每日学习分钟<input id="profileMinutes" type="number" min="5" value="25" /></label>
+            <label>核心痛点（逗号分隔）<input id="profilePain" value="表达卡顿,语法易错" /></label>
+            <label>素材偏好（逗号分隔）<input id="profilePrefs" value="日常生活,旅行" /></label>
+            <label>薄弱语法（逗号分隔）<input id="profileGrammar" value="一般过去时,冠词" /></label>
+            <label>易错词汇（逗号分隔）<input id="profileErrorWords" value="affect,effect" /></label>
+            <label>口语短板（逗号分隔）<input id="profileSpeaking" value="连读,重音" /></label>
+            <label>写作短板（逗号分隔）<input id="profileWriting" value="中式表达,句式单一" /></label>
+          </div>
+        </article>
+      </section>
+
+      <section class="view" id="view-tasks">
+        <article class="panel">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">AI 每日计划</p>
+              <h3>今日任务</h3>
+            </div>
+            <div class="button-row">
+              <input id="taskDate" type="date" />
+              <input id="availableMinutes" class="short-input" type="number" min="5" value="25" title="可用分钟" />
+              <button class="primary-button" id="generatePlanBtn">生成计划</button>
+              <button class="secondary-button" id="loadTasksBtn">查询</button>
+            </div>
+          </div>
+          <div id="tasksList" class="list empty">暂无任务</div>
+        </article>
+      </section>
+
+      <section class="view" id="view-words">
+        <div class="grid-2">
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">词汇沉淀</p>
+                <h3>添加生词</h3>
+              </div>
+            </div>
+            <form class="form-grid">
+              <label>单词<input id="wordText" value="schedule" /></label>
+              <label>释义<input id="wordMeaning" value="日程；安排" /></label>
+              <label class="full-span">例句<input id="wordExample" value="Let's schedule a meeting tomorrow." /></label>
+              <button class="primary-button" type="button" id="addWordBtn">保存生词</button>
+            </form>
+          </article>
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">艾宾浩斯复习</p>
+                <h3>我的生词</h3>
+              </div>
+              <button class="secondary-button" id="loadWordsBtn">刷新</button>
+            </div>
+            <div id="wordsList" class="list empty">暂无生词</div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="view-writing">
+        <div class="grid-2 writing-grid">
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">四层批改</p>
+                <h3>提交作文</h3>
+              </div>
+            </div>
+            <label>标题<input id="writingTitle" value="My weekend plan" /></label>
+            <label>作文内容<textarea id="writingContent" rows="10">I yesterday go to supermarket. I very like learn English because it is more better for my job.</textarea></label>
+            <button class="primary-button" id="correctWritingBtn">AI 批改</button>
+            <div id="writingResult" class="result-card muted">批改结果将在这里展示</div>
+          </article>
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">历史记录</p>
+                <h3>写作批改历史</h3>
+              </div>
+              <button class="secondary-button" id="loadWritingBtn">刷新</button>
+            </div>
+            <div id="writingList" class="list empty">暂无写作记录</div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="view-speaking">
+        <div class="grid-2">
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">情景口语</p>
+                <h3>AI 口语陪练</h3>
+              </div>
+            </div>
+            <label>会话 ID<input id="speakingSessionId" value="web-speaking-demo" /></label>
+            <label>你的表达<textarea id="speakingMessage" rows="5">I want to practice English for travel.</textarea></label>
+            <label>音频资产 ID（可选）<input id="speakingAudioAssetId" type="number" min="1" placeholder="上传音频后可填入" /></label>
+            <button class="primary-button" id="sendSpeakingBtn">发送给 AI</button>
+            <div id="speakingResult" class="result-card muted">AI 回复和发音评分将在这里展示</div>
+          </article>
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">会话历史</p>
+                <h3>口语练习记录</h3>
+              </div>
+              <button class="secondary-button" id="loadSpeakingBtn">刷新</button>
+            </div>
+            <div id="speakingList" class="list empty">暂无口语记录</div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="view-audio">
+        <article class="panel">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">MinIO 对象存储</p>
+              <h3>上传口语录音</h3>
+            </div>
+          </div>
+          <div class="form-grid">
+            <label>音频文件<input id="audioFile" type="file" accept="audio/*,.webm,.mp3,.wav,.m4a" /></label>
+            <label>用途<input id="audioPurpose" value="speaking_recording" /></label>
+            <button class="primary-button" id="uploadAudioBtn">上传音频</button>
+          </div>
+          <div id="audioResult" class="result-card muted">上传结果将在这里展示</div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <script src="/web/assets/app.js" defer></script>
+</body>
+</html>
+
